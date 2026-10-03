@@ -5,4 +5,4 @@ export interface Habit {
   done: Record<string, true>;
 }
 
-export type Tab = 'write' | 'cal' | 'settings';
+export type Tab = 'profile' | 'todo' | 'cal' | 'stats' | 'settings';

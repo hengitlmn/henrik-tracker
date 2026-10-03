@@ -20,13 +20,16 @@ function addHabit(name: string) {
 }
 
 describe('Start und Tabs', () => {
-  it('zeigt drei Tabs, Kalender ist aktiv, linker Tab ist leer', () => {
+  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, neue Tabs sind leer', () => {
     render(<App />);
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['Profile', 'To-do', 'Calendar', 'Stats', 'Settings']);
     expect(tab('Calendar').getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(tab('Write'));
-    expect(tab('Write').getAttribute('aria-selected')).toBe('true');
-    expect(document.querySelector('[data-view="write"]')!.children).toHaveLength(0);
+    for (const [name, view] of [['Profile', 'profile'], ['To-do', 'todo'], ['Stats', 'stats']]) {
+      fireEvent.click(tab(name));
+      expect(tab(name).getAttribute('aria-selected')).toBe('true');
+      expect(document.querySelector(`[data-view="${view}"]`)!.children).toHaveLength(0);
+    }
     fireEvent.click(tab('Calendar'));
     expect(screen.getByLabelText('Back to current week')).toBeTruthy();
   });
@@ -142,7 +145,13 @@ describe('Tab-Leiste', () => {
     expect(document.querySelector('.pill')!.classList.contains('fast')).toBe(true);
     fireEvent.pointerDown(bar(), { clientX: 20, pointerId: 1 });
     fireEvent.pointerUp(bar(), { clientX: 20, pointerId: 1 });
-    expect(tab('Write').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Profile').getAttribute('aria-selected')).toBe('true');
+    fireEvent.pointerDown(bar(), { clientX: 100, pointerId: 1 });
+    fireEvent.pointerUp(bar(), { clientX: 100, pointerId: 1 });
+    expect(tab('To-do').getAttribute('aria-selected')).toBe('true');
+    fireEvent.pointerDown(bar(), { clientX: 215, pointerId: 1 });
+    fireEvent.pointerUp(bar(), { clientX: 215, pointerId: 1 });
+    expect(tab('Stats').getAttribute('aria-selected')).toBe('true');
   });
 
   it('Ziehen: Hover folgt dem Finger, Loslassen wählt den Tab', () => {

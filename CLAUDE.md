@@ -65,13 +65,13 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   gesperrt, aber man kann mit ‹ › beliebig weit in zukünftige Wochen blättern. Tipp auf das Datum oben
   springt zurück zur aktuellen Woche. Im ganzen Wochenbereich (leicht breiter als die Seite) wechselt
   Wischen nach links/rechts die Woche. Die Pfeile ‹ › stehen mittig über Montag und Sonntag (7-Spalten-Raster). Streak = Tage in Folge bis heute (oder bis gestern).
-- Untere Tab-Leiste mit drei Tabs, schwebende abgerundete Kapsel am unteren Rand (mit Safe-Area-Abstand für das
+- Untere Tab-Leiste mit fünf Tabs, schwebende abgerundete Kapsel am unteren Rand (mit Safe-Area-Abstand für das
   iPhone, bewusst tief), aktiver Tab mit runder Hinterlegung, die beim Wechsel gleitet. Ein einfacher Tipp lässt sie schneller
   rübergleiten. Man kann mit dem Finger über die Leiste ziehen (ab ca. 6 px Bewegung), die Hinterlegung folgt, Loslassen wählt den Tab. Beim Tab-Wechsel blendet die Ansicht
   kurz ein (leichter Schub von der Seite):
-  - links: Stift-Symbol, Seite ist bewusst noch leer (für ein späteres Feature)
-  - Mitte: Kalender-Symbol, die Hauptansicht (beim Start aktiv)
-  - rechts: Einstellungs-Symbol (zwei Schieberegler)
+  - von links nach rechts: Profil (Person), To-do (Haken im Quadrat), Kalender (Mitte, beim Start aktiv),
+    Stats (Kurve nach oben), Einstellungen (Zahnrad)
+  - Profil, To-do und Stats sind bewusst noch leer (für spätere Features)
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
 - Einstellungen (passen auf eine Seite, kurze Texte): Neue Gewohnheit anlegen (Eingabefeld ganz oben), Gewohnheiten entfernen
   (zweiter Tipp bestätigt), darunter zwei Buttons nebeneinander: "Back up" (Download-Symbol, speichert eine Datei über

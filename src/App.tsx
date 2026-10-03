@@ -45,7 +45,7 @@ export default function App() {
           style={{ '--dx': anim.dx + 'px' } as CSSProperties}
           data-view={tab}
         >
-          {tab === 'write' && null /* linker Tab: bewusst leer, Platz für ein späteres Feature */}
+          {/* profile, todo und stats: bewusst noch leer, Platz für spätere Features */}
           {tab === 'cal' && (
             <CalendarView
               habits={habits}
