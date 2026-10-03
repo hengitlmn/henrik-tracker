@@ -1,21 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Habit } from './types';
-import { loadHabits, saveHabits } from './lib/storage';
+import type { Habit, Todo } from './types';
+import { loadHabits, loadTodos, saveHabits, saveTodos } from './lib/storage';
 import { keyOf, parseKey } from './lib/dates';
 
-/** Gewohnheiten aus localStorage. Gespeichert wird nur bei Änderungen (nie beim Start). */
-export function useHabits() {
-  const [habits, setHabits] = useState<Habit[]>(loadHabits);
-  const ref = useRef(habits);
+/** Liste aus localStorage. Gespeichert wird nur bei Änderungen (nie beim Start). */
+function useStore<T>(load: () => T[], save: (items: T[]) => void) {
+  const [items, setItems] = useState<T[]>(load);
+  const ref = useRef(items);
 
-  const update = useCallback((fn: (current: Habit[]) => Habit[]) => {
+  const update = useCallback((fn: (current: T[]) => T[]) => {
     const next = fn(ref.current);
     ref.current = next;
-    saveHabits(next);
-    setHabits(next);
-  }, []);
+    save(next);
+    setItems(next);
+  }, [save]);
 
-  return { habits, update };
+  return { items, update };
+}
+
+export function useHabits() {
+  const { items, update } = useStore<Habit>(loadHabits, saveHabits);
+  return { habits: items, update };
+}
+
+export function useTodos() {
+  const { items, update } = useStore<Todo>(loadTodos, saveTodos);
+  return { todos: items, update };
 }
 
 /** Heutiges Datum; aktualisiert sich, wenn die App nach Mitternacht wieder sichtbar wird. */

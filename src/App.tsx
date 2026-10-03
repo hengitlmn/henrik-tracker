@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Tab } from './types';
-import { useHabits, useToday, useWeekNav } from './hooks';
+import { useHabits, useToday, useTodos, useWeekNav } from './hooks';
 import { CalendarView } from './components/CalendarView';
 import { SettingsView } from './components/SettingsView';
+import { TodoView } from './components/TodoView';
 import { TAB_ORDER, TabBar } from './components/TabBar';
 
 export default function App() {
   const { habits, update } = useHabits();
+  const { todos, update: updateTodos } = useTodos();
   const today = useToday();
   const week = useWeekNav();
 
@@ -45,7 +47,8 @@ export default function App() {
           style={{ '--dx': anim.dx + 'px' } as CSSProperties}
           data-view={tab}
         >
-          {/* profile, todo und stats: bewusst noch leer, Platz für spätere Features */}
+          {/* profile und stats: bewusst noch leer, Platz für spätere Features */}
+          {tab === 'todo' && <TodoView todos={todos} today={today} update={updateTodos} />}
           {tab === 'cal' && (
             <CalendarView
               habits={habits}
@@ -57,7 +60,7 @@ export default function App() {
               onToggle={toggle}
             />
           )}
-          {tab === 'settings' && <SettingsView habits={habits} update={update} />}
+          {tab === 'settings' && <SettingsView habits={habits} update={update} todos={todos} updateTodos={updateTodos} />}
         </div>
       </main>
       <TabBar current={tab} onSelect={selectTab} />

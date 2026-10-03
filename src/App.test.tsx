@@ -27,12 +27,12 @@ function addHabit(name: string) {
 }
 
 describe('Start und Tabs', () => {
-  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, neue Tabs sind leer', () => {
+  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, Profile und Stats sind noch leer', () => {
     render(<App />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['Profile', 'To-do', 'Calendar', 'Stats', 'Settings']);
     expect(tab('Calendar').getAttribute('aria-selected')).toBe('true');
-    for (const [name, view] of [['Profile', 'profile'], ['To-do', 'todo'], ['Stats', 'stats']]) {
+    for (const [name, view] of [['Profile', 'profile'], ['Stats', 'stats']]) {
       fireEvent.click(tab(name));
       expect(tab(name).getAttribute('aria-selected')).toBe('true');
       expect(document.querySelector(`[data-view="${view}"]`)!.children).toHaveLength(0);
@@ -150,8 +150,115 @@ describe('Habits-Einstellungen', () => {
   it('Farbe bleibt in Sicherung erhalten, ungültige Farben fallen weg', async () => {
     const { parseBackup, exportText } = await import('./lib/backup');
     const h = [{ id: 'a', name: 'X', done: {}, color: '#F472B6' }];
-    expect(parseBackup(exportText(h))![0].color).toBe('#F472B6');
-    expect(parseBackup(JSON.stringify([{ name: 'Y', color: 'red' }]))![0].color).toBeUndefined();
+    expect(parseBackup(exportText(h))!.habits[0].color).toBe('#F472B6');
+    expect(parseBackup(JSON.stringify([{ name: 'Y', color: 'red' }]))!.habits[0].color).toBeUndefined();
+  });
+});
+
+describe('To-do-Tab', () => {
+  const openTodo = () => fireEvent.click(tab('To-do'));
+  const addTodo = (title: string) => {
+    fireEvent.change(screen.getByLabelText('New to-do'), { target: { value: title } });
+    fireEvent.submit(screen.getByLabelText('New to-do').closest('form')!);
+  };
+  const titles = (sel: string) => [...document.querySelectorAll(`${sel} .todotitle`)].map((e) => e.textContent);
+
+  it('zeigt "Today" mit Datum und nur ein Plus, sonst nichts', () => {
+    render(<App />);
+    openTodo();
+    expect(document.querySelector('.sticky-top h1')!.textContent).toBe('Today');
+    expect(document.querySelector('.todate')!.textContent).toMatch(/^[A-Z][a-z]{2} \d{1,2}\. [A-Z][a-z]{2}$/);
+    expect(screen.getByRole('button', { name: 'Add to-do' })).toBeTruthy();
+    expect(document.querySelectorAll('.todorow')).toHaveLength(0);
+    expect(document.body.textContent).not.toMatch(/completed/i);
+  });
+
+  it('Plus öffnet eine Zeile, Enter fügt hinzu und bleibt offen, leer + Blur schließt', () => {
+    render(<App />);
+    openTodo();
+    fireEvent.click(screen.getByRole('button', { name: 'Add to-do' }));
+    addTodo('Buy milk');
+    addTodo('Call mom');
+    expect(titles('.todos')).toEqual(['Buy milk', 'Call mom']);
+    const input = screen.getByLabelText('New to-do') as HTMLInputElement;
+    expect(input.value).toBe(''); // bereit für die nächste Aufgabe
+    fireEvent.submit(input.closest('form')!); // leer: nichts passiert
+    expect(titles('.todos')).toHaveLength(2);
+    fireEvent.blur(input);
+    expect(screen.queryByLabelText('New to-do')).toBeNull();
+    expect(JSON.parse(localStorage.getItem('todos-v1')!).map((t: { title: string }) => t.title)).toEqual(['Buy milk', 'Call mom']);
+  });
+
+  it('Abhaken verschiebt in "Hide completed" mit Zeitstempel, Rückgängig stellt die Reihenfolge her', () => {
+    localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'First' }, { id: 'b', title: 'Second' }, { id: 'c', title: 'Third' }]));
+    render(<App />);
+    openTodo();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Complete: Second' }));
+    expect(titles('.todos:not(.completed)')).toEqual(['First', 'Third']);
+    expect(titles('.todos.completed')).toEqual(['Second']);
+    expect(document.querySelector('.stamp')!.textContent).toMatch(/^\d{1,2}\. [A-Z][a-z]{2} \d{2}:\d{2}$/);
+    expect(JSON.parse(localStorage.getItem('todos-v1')!)[1].completedAt).toBeTruthy();
+
+    fireEvent.click(screen.getByText('Hide completed'));
+    expect(document.querySelector('.todos.completed')).toBeNull();
+    fireEvent.click(screen.getByText('Show completed'));
+    expect(titles('.todos.completed')).toEqual(['Second']);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mark as open: Second' }));
+    expect(titles('.todos:not(.completed)')).toEqual(['First', 'Second', 'Third']); // ursprüngliche Position
+    expect(screen.queryByText('Hide completed')).toBeNull();
+  });
+
+  it('Tipp auf den Titel bearbeitet, Papierkorb löscht', () => {
+    localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'Old' }, { id: 'b', title: 'Keep' }]));
+    render(<App />);
+    openTodo();
+    fireEvent.click(screen.getByText('Old'));
+    const edit = screen.getByLabelText('Edit to-do') as HTMLInputElement;
+    fireEvent.change(edit, { target: { value: 'New name' } });
+    fireEvent.keyDown(edit, { key: 'Enter' });
+    expect(titles('.todos')).toEqual(['New name', 'Keep']);
+
+    fireEvent.click(screen.getByText('Keep'));
+    fireEvent.change(screen.getByLabelText('Edit to-do'), { target: { value: '   ' } }); // leer: Titel bleibt
+    fireEvent.blur(screen.getByLabelText('Edit to-do'));
+    expect(titles('.todos')).toEqual(['New name', 'Keep']);
+
+    fireEvent.click(screen.getByText('New name'));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete: New name' }));
+    expect(titles('.todos')).toEqual(['Keep']);
+    expect(JSON.parse(localStorage.getItem('todos-v1')!)).toHaveLength(1);
+  });
+
+  it('Sicherung enthält To-dos und stellt sie wieder her', async () => {
+    localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'Mine' }]));
+    render(<App />);
+    fireEvent.click(tab('Settings'));
+    fireEvent.click(screen.getByRole('button', { name: 'Data' }));
+    let shared: { files: File[] } | null = null;
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+    Object.defineProperty(navigator, 'share', { configurable: true, value: (o: { files: File[] }) => { shared = o; return Promise.resolve(); } });
+    await act(async () => { fireEvent.click(screen.getByText('Back up')); });
+    expect(JSON.parse(await shared!.files[0].text()).todos).toEqual([{ id: 'a', title: 'Mine' }]);
+
+    const file = new File([JSON.stringify({ habits: [], todos: [{ id: 'z', title: 'Restored', completedAt: '2026-10-03T12:00:00.000Z' }] })], 'b.json');
+    fireEvent.change(screen.getByTestId('file-input'), { target: { files: [file] } });
+    await vi.waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/Replace 0 habits and 1 to-do with 0 and 1\? Tap Confirm/));
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(screen.getByRole('status').textContent).toMatch(/Restored: 0 habits and 1 to-do\./);
+    expect(JSON.parse(localStorage.getItem('todos-v1')!)).toEqual([{ id: 'z', title: 'Restored', completedAt: '2026-10-03T12:00:00.000Z' }]);
+  });
+
+  it('ältere Sicherung ohne To-dos lässt die To-dos unverändert', async () => {
+    localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'Mine' }]));
+    render(<App />);
+    fireEvent.click(tab('Settings'));
+    fireEvent.click(screen.getByRole('button', { name: 'Data' }));
+    const file = new File([JSON.stringify([{ id: 'h', name: 'Old habit', done: {} }])], 'b.json');
+    fireEvent.change(screen.getByTestId('file-input'), { target: { files: [file] } });
+    await vi.waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/Replace 0 habits with 1\?/));
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(JSON.parse(localStorage.getItem('todos-v1')!)).toEqual([{ id: 'a', title: 'Mine' }]);
   });
 });
 

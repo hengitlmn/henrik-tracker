@@ -7,6 +7,9 @@ export const MONTHS_EN = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+export const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export function pad(n: number): string {
   return n < 10 ? '0' + n : '' + n;
 }
@@ -52,4 +55,15 @@ export function streak(h: Habit, today: Date): number {
     d = addDays(d, -1);
   }
   return n;
+}
+
+/** "Sat 3. Oct" */
+export function shortDate(d: Date): string {
+  return WEEKDAYS_SHORT[d.getDay()] + ' ' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()];
+}
+
+/** "3. Oct 14:55" aus einem ISO-Zeitpunkt */
+export function stamp(iso: string): string {
+  const d = new Date(iso);
+  return d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }

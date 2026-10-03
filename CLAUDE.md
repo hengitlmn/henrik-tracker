@@ -11,7 +11,8 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 - `src/main.tsx`: Einstieg, Zoom-Sperre (Gesten-Events), Service-Worker-Registrierung
 - `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
 - `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
-- `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `SettingsView`, `TabBar` (Pille, Ziehen)
+- `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView`, `SettingsView` (Übersicht) mit
+  `HabitsSettings` und `DataSettings`, `TabBar` (Pille, Ziehen)
 - `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
 - `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
 - `src/**/*.test.ts(x)`: Tests (jsdom). `src/test-setup.ts` leert `localStorage` nach jedem Test.
@@ -51,7 +52,10 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true }, color?: "#RRGGBB" }`.
 `color` ist optional (Farbe der abgehakten Kreise, ohne Angabe der Akzent); alte Daten ohne `color` bleiben gültig.
 
-Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...] }`.
+To-dos: eigener Schlüssel `todos-v1`, Array von `{ id: string, title: string, completedAt?: ISO-Zeitpunkt }` (kein `completedAt` = offen).
+
+Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...], todos: [...] }`.
+`todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
 Der Import akzeptiert zusätzlich das ältere reine Array-Format und verwirft ungültige Datumsschlüssel.
 Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" bestätigen).
 
@@ -79,7 +83,13 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   kurz ein (leichter Schub von der Seite):
   - von links nach rechts: Profil (Person), To-do (Haken im Quadrat), Kalender (Mitte, beim Start aktiv),
     Stats (Kurve nach oben), Einstellungen (Zahnrad)
-  - Profil, To-do und Stats sind bewusst noch leer (für spätere Features)
+  - Profil und Stats sind bewusst noch leer (für spätere Features)
+  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers): fester Kopf "Today" plus Datum (`Sat 3. Oct`),
+    Aufgaben als einfache Zeilen mit Kästchen und fettem Titel, darunter ein "+" (Tipp öffnet eine Eingabezeile, Enter
+    fügt hinzu und lässt sie offen). Abhaken verschiebt die Aufgabe unter "Hide completed" (auf-/zuklappbar) mit
+    Zeitstempel (`3. Oct 14:55`), Rückgängig setzt sie an die ursprüngliche Stelle. Tipp auf den Titel = umbenennen,
+    Papierkorb daneben = löschen. Noch nicht gebaut: Datum/Uhrzeit, Tags, Detail-Sheet, Suche, Sortieren, Erinnerungen,
+    Wiederholung, Dauer, roter Plus-Button (bewusst auf später verschoben).
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
 - Einstellungen im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
   Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:

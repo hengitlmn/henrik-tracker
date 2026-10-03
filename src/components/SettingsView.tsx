@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import type { Habit } from '../types';
+import type { Habit, Todo } from '../types';
 import { DataSettings } from './DataSettings';
 import { HabitsSettings } from './HabitsSettings';
 
 interface Props {
   habits: Habit[];
   update: (fn: (current: Habit[]) => Habit[]) => void;
+  todos: Todo[];
+  updateTodos: (fn: (current: Todo[]) => Todo[]) => void;
 }
 
 type Page = 'root' | 'habits' | 'data';
@@ -32,7 +34,7 @@ function Row({ label, color, icon, onClick }: { label: string; color: string; ic
   );
 }
 
-export function SettingsView({ habits, update }: Props) {
+export function SettingsView({ habits, update, todos, updateTodos }: Props) {
   const [page, setPage] = useState<Page>('root');
   const [dx, setDx] = useState(0);
 
@@ -86,7 +88,7 @@ export function SettingsView({ habits, update }: Props) {
             <span />
           </div>
           {page === 'habits' && <HabitsSettings habits={habits} update={update} />}
-          {page === 'data' && <DataSettings habits={habits} update={update} />}
+          {page === 'data' && <DataSettings habits={habits} update={update} todos={todos} updateTodos={updateTodos} />}
         </>
       )}
     </div>

@@ -1,4 +1,4 @@
-import type { Habit } from '../types';
+import type { Habit, Todo } from '../types';
 import { newId } from './id';
 import { validColor } from './colors';
 
@@ -31,6 +31,35 @@ export function loadHabits(): Habit[] {
 export function saveHabits(habits: Habit[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+  } catch {
+    /* Speicher voll oder gesperrt: still ignorieren */
+  }
+}
+
+/** Eigener Schlüssel für die To-do-Liste (neues Feature, daher keine Migration nötig). */
+export const TODO_KEY = 'todos-v1';
+
+export function loadTodos(): Todo[] {
+  try {
+    const raw = localStorage.getItem(TODO_KEY);
+    const data: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(data)) return [];
+    const out: Todo[] = [];
+    for (const item of data) {
+      if (!item || typeof item.title !== 'string') continue;
+      const todo: Todo = { id: typeof item.id === 'string' && item.id ? item.id : newId(), title: item.title };
+      if (typeof item.completedAt === 'string' && !Number.isNaN(Date.parse(item.completedAt))) todo.completedAt = item.completedAt;
+      out.push(todo);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export function saveTodos(todos: Todo[]): void {
+  try {
+    localStorage.setItem(TODO_KEY, JSON.stringify(todos));
   } catch {
     /* Speicher voll oder gesperrt: still ignorieren */
   }

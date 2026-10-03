@@ -7,4 +7,11 @@ export interface Habit {
   color?: string;
 }
 
+export interface Todo {
+  id: string;
+  title: string;
+  /** ISO-Zeitpunkt des Abhakens; ohne Angabe ist die Aufgabe offen */
+  completedAt?: string;
+}
+
 export type Tab = 'profile' | 'todo' | 'cal' | 'stats' | 'settings';

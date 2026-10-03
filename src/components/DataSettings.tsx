@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react';
-import type { Habit } from '../types';
+import type { Habit, Todo } from '../types';
 import { backupFileName, exportText, parseBackup } from '../lib/backup';
+import type { ParsedBackup } from '../lib/backup';
 
 interface Props {
   habits: Habit[];
   update: (fn: (current: Habit[]) => Habit[]) => void;
+  todos: Todo[];
+  updateTodos: (fn: (current: Todo[]) => Todo[]) => void;
 }
 
 const ICON_PROPS = {
@@ -32,13 +35,13 @@ function UploadIcon() {
   );
 }
 
-export function DataSettings({ habits, update }: Props) {
+export function DataSettings({ habits, update, todos, updateTodos }: Props) {
   const [msg, setMsg] = useState('');
-  const [pending, setPending] = useState<Habit[] | null>(null); // gesetzt = Ersetzen wartet auf Bestätigung
+  const [pending, setPending] = useState<ParsedBackup | null>(null); // gesetzt = Ersetzen wartet auf Bestätigung
   const fileInput = useRef<HTMLInputElement>(null);
 
   const backup = () => {
-    const text = exportText(habits);
+    const text = exportText(habits, todos);
     const fileName = backupFileName();
     let file: File | null = null;
     try { file = new File([text], fileName, { type: 'application/json' }); } catch { /* ältere Browser */ }
@@ -77,7 +80,13 @@ export function DataSettings({ habits, update }: Props) {
         return;
       }
       setPending(data);
-      setMsg('Replace ' + habits.length + (habits.length === 1 ? ' habit' : ' habits') + ' with ' + data.length + '? Tap Confirm.');
+      const n = (c: number, one: string, many: string) => c + (c === 1 ? one : many);
+      setMsg(
+        data.todos
+          ? 'Replace ' + n(habits.length, ' habit', ' habits') + ' and ' + n(todos.length, ' to-do', ' to-dos') +
+            ' with ' + data.habits.length + ' and ' + data.todos.length + '? Tap Confirm.'
+          : 'Replace ' + n(habits.length, ' habit', ' habits') + ' with ' + data.habits.length + '? Tap Confirm.',
+      );
     };
     reader.onerror = () => setMsg('The file could not be read.');
     reader.readAsText(file);
@@ -89,8 +98,13 @@ export function DataSettings({ habits, update }: Props) {
       fileInput.current?.click();
       return;
     }
-    update(() => pending);
-    setMsg('Restored: ' + pending.length + (pending.length === 1 ? ' habit.' : ' habits.'));
+    update(() => pending.habits);
+    if (pending.todos) updateTodos(() => pending.todos!);
+    const h = pending.habits.length;
+    setMsg(
+      'Restored: ' + h + (h === 1 ? ' habit' : ' habits') +
+      (pending.todos ? ' and ' + pending.todos.length + (pending.todos.length === 1 ? ' to-do.' : ' to-dos.') : '.'),
+    );
     setPending(null);
   };
 
