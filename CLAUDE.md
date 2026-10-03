@@ -1,35 +1,44 @@
 # Habit Tracker (PWA)
 
-Minimalistischer Habit Tracker, der auf dem iPhone als App vom Home-Bildschirm läuft.
-Reines HTML/CSS/JavaScript, keine Frameworks, kein Build-Schritt, keine Laufzeit-Abhängigkeiten.
+Minimalistischer Habit Tracker, der auf dem iPhone als App vom Home-Bildschirm läuft (PWA, kein native App).
+Stack: React 19, TypeScript, Vite, `vite-plugin-pwa`, Tests mit Vitest und Testing Library. Gehostet auf Vercel,
+automatisch gebaut bei jedem Push auf `main`. Daten nur in `localStorage`, kein Backend.
 Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei komplexen Themen ausführlicher).
 
 ## Struktur
 
-- `public/` ist die auslieferbare App. Nur dieser Ordner wird veröffentlicht.
-  - `index.html`: gesamte App (HTML, CSS, JS in einer Datei)
-  - `sw.js`: Service Worker (Offline-Cache)
-  - `manifest.webmanifest`, `icon-180.png`, `icon-192.png`, `icon-512.png`
-- `tests/app.test.js`: Verhaltenstests mit jsdom
+- `index.html`: Vite-Einstiegsseite (Meta-Tags, Google-Fonts-Link, `#root`)
+- `src/main.tsx`: Einstieg, Zoom-Sperre (Gesten-Events), Service-Worker-Registrierung
+- `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
+- `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
+- `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `SettingsView`, `TabBar` (Pille, Ziehen)
+- `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
+- `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
+- `src/**/*.test.ts(x)`: Tests (jsdom). `src/test-setup.ts` leert `localStorage` nach jedem Test.
+- `public/`: nur die Icons (`icon-180/192/512.png`). Manifest und Service Worker erzeugt der Build.
+- `vite.config.ts`: Vite, PWA-Manifest, Workbox
 - `tools/make_icons.py`: erzeugt die Icons aus `assets/logo-original.png`
 - `assets/logo-original.png`: Original-Logo (schwarzes H auf Weiß)
+- Git-Tag `legacy-vanilla`: letzter Stand der alten Version (reines HTML/CSS/JS in `public/index.html`)
 
 ## Befehle
 
-- `npm install` einmalig, dann `npm test` (muss nach jeder Änderung grün sein)
-- `npm run serve` startet einen lokalen Server auf http://localhost:8080
+- `npm install` einmalig, dann `npm test` (muss nach jeder Änderung grün sein) und `npm run typecheck`
+- `npm run dev` startet den Entwicklungsserver auf http://localhost:5173
+- `npm run build` erzeugt `dist/`, `npm run preview` zeigt den gebauten Stand auf http://localhost:4173
 - `npm run icons` baut die Icons neu (braucht Python mit Pillow)
 
 ## Wichtige Regeln
 
-1. **Cache-Version erhöhen:** Bei jeder Änderung an Dateien in `public/` die Konstante `CACHE` in `sw.js`
-   hochzählen (`habits-v17` -> `habits-v18`). Sonst zeigt das Handy die alte Version aus dem Cache.
-   Nach dem Deploy muss die App auf dem iPhone komplett geschlossen und neu geöffnet werden.
+1. **Kein Cache-Hochzählen mehr nötig:** Der Service Worker wird beim Build erzeugt und aktualisiert sich selbst.
+   Nach einem Deploy muss die App auf dem iPhone trotzdem einmal komplett geschlossen und neu geöffnet werden.
 2. **Daten liegen nur im Browser:** `localStorage`, Schlüssel `habits-v1`. Jede Adresse und jede installierte
    Home-Bildschirm-App hat eigenen Speicher. Den Schlüssel oder das Datenformat nie ohne Migration ändern.
-3. **Keine externen Abhängigkeiten** in der App (nur Google Fonts per Link, siehe unten).
+   Den Hosting-Anbieter oder die Adresse nur ändern, wenn vorher gesichert wird (am besten eigene Domain nutzen).
+3. **Neue Abhängigkeiten bewusst wählen** (App klein und schnell halten). Schriften nur per Google-Fonts-Link.
 4. **Zoom bleibt gesperrt** (Viewport-Meta, `touch-action`, Gesten-Events). Eingabefelder mindestens 16px Schrift.
-5. **Nichts mit `localStorage` im Test überschreiben**, was nicht zurückgesetzt wird (jsdom-Umgebung ist isoliert).
+5. **Tests dürfen `localStorage` nutzen**, es wird nach jedem Test geleert (`src/test-setup.ts`).
+6. **Dateien nie mit `open(f, 'w')` im selben Ausdruck lesen und schreiben** (leert die Datei). Erst lesen, dann schreiben.
 
 ## Datenformat
 
@@ -77,12 +86,11 @@ vom Home-Bildschirm gelöscht und neu hinzugefügt werden (vorher Daten über di
 
 ## Deployment
 
-Aktuell: Netlify per Drag-and-drop. Den Ordner `public/` auf das Projekt unter Deploys ziehen (dieselbe
-Adresse bleibt, Daten bleiben erhalten). Alternativ per Git: `netlify.toml` ist vorbereitet
-(`publish = "public"`, kein Build). Auf dem iPhone in Safari öffnen, Teilen, "Zum Home-Bildschirm".
-
-Hinweis: Wenn das Netlify-Projekt privat ist, muss das iPhone dort angemeldet sein. Ob das als installierte
-Web-App sauber funktioniert, ist ungeprüft. Die App enthält nichts Persönliches, öffentlich wäre unkritisch.
+Git-Repository auf GitHub, Vercel baut bei jedem Push auf `main` (Build `npm run build`, Ausgabe `dist`).
+Andere Branches und Pull Requests bekommen eine eigene Vorschau-Adresse zum Testen auf dem iPhone.
+Auf dem iPhone in Safari öffnen, Teilen, "Zum Home-Bildschirm". Das Vercel-Projekt muss öffentlich erreichbar
+sein (kein Passwortschutz), sonst lädt iOS das Icon nicht und zeigt nur ein H auf Schwarz.
+Umzug von Netlify: einmal Daten sichern, neue Adresse hinzufügen, wiederherstellen, alte App löschen.
 
 ## Offene Punkte / Ideen
 
