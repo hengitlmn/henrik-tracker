@@ -173,7 +173,7 @@ textarea:focus { outline: none; border-color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
-/* Test: großes H mittig im Kalender-Tab (hinter dem Inhalt) */
+/* Test: großes J mittig im Kalender-Tab (hinter dem Inhalt) */
 .test-h {
   position: fixed; inset: 0; z-index: 0;
   display: grid; place-items: center;
