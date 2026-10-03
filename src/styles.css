@@ -172,13 +172,3 @@ textarea:focus { outline: none; border-color: var(--ink); }
 .view-in { animation: viewIn .32s cubic-bezier(.32,.72,0,1) both; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-
-/* Test: großes J mittig im Kalender-Tab (hinter dem Inhalt) */
-.test-h {
-  position: fixed; inset: 0; z-index: 0;
-  display: grid; place-items: center;
-  font-family: "Arial Black", "Archivo Black", Arial, sans-serif; font-weight: 900; font-synthesis: none;
-  font-size: min(60vw, 280px); line-height: 1; color: var(--ink);
-  pointer-events: none;
-}
-main { position: relative; z-index: 1; }

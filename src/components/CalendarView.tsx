@@ -67,7 +67,6 @@ export function CalendarView({ habits, today, weekOffset, slide, onChangeWeek, o
 
   return (
     <div>
-      <div className="test-h" aria-hidden="true">J</div>
       <header className="head" role="button" tabIndex={0} aria-label="Back to current week" onClick={onToday} onKeyDown={onHeadKey}>
         <p className="day">{WEEKDAYS_EN[today.getDay()]}</p>
         <h1 className="date">{pad(today.getDate())}. {MONTHS_EN[today.getMonth()]}</h1>
