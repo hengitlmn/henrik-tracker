@@ -2,29 +2,43 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Habit } from '../types';
 import { newId } from '../lib/id';
-import { backupFileName, copyText, exportText, parseBackup } from '../lib/backup';
+import { backupFileName, exportText, parseBackup } from '../lib/backup';
 
 interface Props {
   habits: Habit[];
   update: (fn: (current: Habit[]) => Habit[]) => void;
 }
 
+const ICON_PROPS = {
+  viewBox: '0 0 24 24', width: 18, height: 18, fill: 'none', stroke: 'currentColor',
+  strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+} as const;
+
+function DownloadIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M12 4v11" />
+      <path d="M7.5 11l4.5 4.5 4.5-4.5" />
+      <path d="M5 19.5h14" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M12 16V5" />
+      <path d="M7.5 9L12 4.5 16.5 9" />
+      <path d="M5 19.5h14" />
+    </svg>
+  );
+}
+
 export function SettingsView({ habits, update }: Props) {
   const [name, setName] = useState('');
   const [msg, setMsg] = useState('');
-  const [exportBox, setExportBox] = useState<string | null>(null);
-  const [importText, setImportText] = useState('');
   const [pending, setPending] = useState<Habit[] | null>(null); // gesetzt = Ersetzen wartet auf Bestätigung
   const fileInput = useRef<HTMLInputElement>(null);
-  const exportRef = useRef<HTMLTextAreaElement>(null);
-
-  // Fallback-Box markieren, damit man manuell kopieren kann
-  useEffect(() => {
-    if (exportBox !== null) {
-      exportRef.current?.focus();
-      exportRef.current?.select();
-    }
-  }, [exportBox]);
 
   const addHabit = (e: FormEvent) => {
     e.preventDefault();
@@ -34,18 +48,7 @@ export function SettingsView({ habits, update }: Props) {
     setName('');
   };
 
-  const copyCode = async () => {
-    const text = exportText(habits);
-    if (await copyText(text)) {
-      setExportBox(null);
-      setMsg('Code copied.');
-    } else {
-      setExportBox(text);
-      setMsg('Copying failed. Copy the selected code.');
-    }
-  };
-
-  const saveFile = () => {
+  const backup = () => {
     const text = exportText(habits);
     const fileName = backupFileName();
     let file: File | null = null;
@@ -54,7 +57,7 @@ export function SettingsView({ habits, update }: Props) {
       navigator.share({ files: [file], title: 'Habits backup' }).then(
         () => setMsg('File saved.'),
         (err: unknown) => {
-          if (!err || (err as { name?: string }).name !== 'AbortError') setMsg('Saving failed. Use "Copy code".');
+          if (!err || (err as { name?: string }).name !== 'AbortError') setMsg('Saving failed.');
         },
       );
       return;
@@ -70,21 +73,22 @@ export function SettingsView({ habits, update }: Props) {
       setTimeout(() => URL.revokeObjectURL(url), 2000);
       setMsg('Downloading file.');
     } catch {
-      setMsg('Saving failed. Use "Copy code".');
+      setMsg('Saving failed.');
     }
-  };
-
-  const onImportChange = (value: string) => {
-    setImportText(value);
-    setPending(null);
   };
 
   const onFile = (file: File | undefined) => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      onImportChange(String(reader.result || ''));
-      setMsg('File loaded. Tap "Restore".');
+      const data = parseBackup(String(reader.result || '').trim());
+      if (!data) {
+        setPending(null);
+        setMsg('This is not a valid backup.');
+        return;
+      }
+      setPending(data);
+      setMsg('Replace ' + habits.length + (habits.length === 1 ? ' habit' : ' habits') + ' with ' + data.length + '? Tap Confirm.');
     };
     reader.onerror = () => setMsg('The file could not be read.');
     reader.readAsText(file);
@@ -92,19 +96,13 @@ export function SettingsView({ habits, update }: Props) {
   };
 
   const restore = () => {
-    const text = importText.trim();
-    if (!text) { setMsg('Paste a code or load a file first.'); return; }
-    const data = parseBackup(text);
-    if (!data) { setMsg('This is not a valid backup.'); setPending(null); return; }
     if (!pending) {
-      setPending(data);
-      setMsg('Replace ' + habits.length + (habits.length === 1 ? ' habit' : ' habits') + ' with ' + data.length + '? Tap again.');
+      fileInput.current?.click();
       return;
     }
     update(() => pending);
-    setPending(null);
-    setImportText('');
     setMsg('Restored: ' + pending.length + (pending.length === 1 ? ' habit.' : ' habits.'));
+    setPending(null);
   };
 
   return (
@@ -141,32 +139,14 @@ export function SettingsView({ habits, update }: Props) {
       </div>
 
       <div className="section">
-        <h2>Back up data</h2>
-        <p>Your data lives only on this device.</p>
+        <h2>Data</h2>
         <div className="btns">
-          <button className="btn primary" type="button" onClick={copyCode}>Copy code</button>
-          <button className="btn" type="button" onClick={saveFile}>Save as file</button>
-        </div>
-        {exportBox !== null && (
-          <textarea ref={exportRef} aria-label="Code to copy manually" readOnly value={exportBox} style={{ marginTop: 12 }} />
-        )}
-      </div>
-
-      <div className="section">
-        <h2>Restore data</h2>
-        <p>Paste a code or load a file.</p>
-        <textarea
-          aria-label="Paste code"
-          placeholder="Paste code here"
-          spellCheck={false}
-          autoCapitalize="off"
-          autoCorrect="off"
-          value={importText}
-          onChange={(e) => onImportChange(e.target.value)}
-        />
-        <div className="btns">
-          <button className="btn" type="button" onClick={() => fileInput.current?.click()}>Load file</button>
-          <button className="btn primary" type="button" onClick={restore}>{pending ? 'Confirm replace' : 'Restore'}</button>
+          <button className="btn" type="button" onClick={backup}>
+            <DownloadIcon /> Back up
+          </button>
+          <button className={'btn' + (pending ? ' primary' : '')} type="button" onClick={restore}>
+            <UploadIcon /> {pending ? 'Confirm' : 'Restore'}
+          </button>
         </div>
         <input
           ref={fileInput}

@@ -46,7 +46,7 @@ Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true } }`.
 
 Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...] }`.
 Der Import akzeptiert zusätzlich das ältere reine Array-Format und verwirft ungültige Datumsschlüssel.
-Wiederherstellen ersetzt die aktuellen Daten (mit Bestätigung per zweitem Tipp).
+Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" bestätigen).
 
 ## Design-Entscheidungen
 
@@ -73,8 +73,9 @@ Wiederherstellen ersetzt die aktuellen Daten (mit Bestätigung per zweitem Tipp)
   - Mitte: Kalender-Symbol, die Hauptansicht (beim Start aktiv)
   - rechts: Einstellungs-Symbol (zwei Schieberegler)
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
-- Einstellungen: Neue Gewohnheit anlegen (Eingabefeld ganz oben), Gewohnheiten entfernen (zweiter Tipp bestätigt), Daten sichern (Code kopieren oder als Datei
-  über das Teilen-Menü), Daten wiederherstellen (Code einfügen oder Datei laden).
+- Einstellungen (passen auf eine Seite, kurze Texte): Neue Gewohnheit anlegen (Eingabefeld ganz oben), Gewohnheiten entfernen
+  (zweiter Tipp bestätigt), darunter zwei Buttons nebeneinander: "Back up" (Download-Symbol, speichert eine Datei über
+  das Teilen-Menü) und "Restore" (Upload-Symbol, Datei wählen, dann "Confirm"). Code kopieren/einfügen gibt es nicht mehr.
 - Alle Icons sind einfache Inline-SVGs mit `currentColor`, Strichstärke 1.6.
 
 ## App-Icon

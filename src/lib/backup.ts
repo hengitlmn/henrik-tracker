@@ -44,28 +44,3 @@ export function parseBackup(text: string): Habit[] | null {
   }
   return out;
 }
-
-/** In die Zwischenablage kopieren. Gibt false zurück, wenn es nicht geklappt hat. */
-export async function copyText(text: string): Promise<boolean> {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      /* weiter mit Fallback */
-    }
-  }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px;';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = typeof document.execCommand === 'function' && document.execCommand('copy');
-    document.body.removeChild(ta);
-    return !!ok;
-  } catch {
-    return false;
-  }
-}

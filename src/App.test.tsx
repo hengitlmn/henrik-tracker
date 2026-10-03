@@ -172,66 +172,63 @@ describe('Tab-Leiste', () => {
 
 describe('Sichern und Wiederherstellen', () => {
   const msg = () => screen.getByRole('status').textContent!;
-
-  it('Kopieren: Fallback-Box ohne Zwischenablage, sonst Meldung', async () => {
-    localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
-    render(<App />);
-    fireEvent.click(tab('Settings'));
-    await act(async () => { fireEvent.click(screen.getByText('Copy code')); });
-    const box = screen.getByLabelText('Code to copy manually') as HTMLTextAreaElement;
-    expect(JSON.parse(box.value).habits).toHaveLength(1);
-
-    let clip = '';
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (t: string) => { clip = t; return Promise.resolve(); } } });
-    await act(async () => { fireEvent.click(screen.getByText('Copy code')); });
-    expect(JSON.parse(clip).app).toBe('habits');
-    expect(msg()).toMatch(/Code copied/);
-    expect(screen.queryByLabelText('Code to copy manually')).toBeNull();
-  });
-
-  it('Wiederherstellen ersetzt erst nach zweitem Tipp', () => {
-    localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }, { id: 'b', name: 'Read', done: {} }]));
-    render(<App />);
-    fireEvent.click(tab('Settings'));
-    const code = JSON.stringify({ app: 'habits', version: 1, habits: [{ id: 'z', name: 'Other', done: { '2026-01-02': true, bad: true } }] });
-    fireEvent.change(screen.getByLabelText('Paste code'), { target: { value: code } });
-    fireEvent.click(screen.getByText('Restore'));
-    expect(msg()).toMatch(/Replace 2 habits with 1\? Tap again/);
-    expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(2); // noch nichts passiert
-    fireEvent.click(screen.getByText('Confirm replace'));
-    expect(msg()).toMatch(/Restored: 1 habit/);
-    expect(JSON.parse(localStorage.getItem('habits-v1')!)).toEqual([{ id: 'z', name: 'Other', done: { '2026-01-02': true } }]);
-    expect(document.querySelectorAll('.manage li')).toHaveLength(1);
-  });
-
-  it('meldet ungültigen oder leeren Code und lässt Daten unverändert', () => {
-    localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
-    render(<App />);
-    fireEvent.click(tab('Settings'));
-    fireEvent.click(screen.getByText('Restore'));
-    expect(msg()).toMatch(/Paste a code/);
-    fireEvent.change(screen.getByLabelText('Paste code'), { target: { value: 'nonsense' } });
-    fireEvent.click(screen.getByText('Restore'));
-    expect(msg()).toMatch(/not a valid/);
-    expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(1);
-  });
-
-  it('lädt eine Datei in das Eingabefeld', async () => {
-    render(<App />);
-    fireEvent.click(tab('Settings'));
-    const content = JSON.stringify([{ id: 'a', name: 'FromFile', done: {} }]);
-    const file = new File([content], 'b.json', { type: 'application/json' });
+  const chooseFile = (content: string) => {
+    const file = new File([content], 'backup.json', { type: 'application/json' });
     fireEvent.change(screen.getByTestId('file-input'), { target: { files: [file] } });
-    await vi.waitFor(() => expect((screen.getByLabelText('Paste code') as HTMLTextAreaElement).value).toBe(content));
+  };
+
+  it('zeigt zwei Buttons nebeneinander, kein Code-Feld mehr', () => {
+    render(<App />);
+    fireEvent.click(tab('Settings'));
+    const btns = document.querySelector('.btns')!;
+    expect([...btns.querySelectorAll('button')].map((b) => b.textContent!.trim())).toEqual(['Back up', 'Restore']);
+    expect(btns.querySelectorAll('svg')).toHaveLength(2);
+    expect(document.querySelector('textarea')).toBeNull();
+    expect(document.body.textContent).not.toMatch(/Copy code|Paste code/);
   });
 
-  it('Datei sichern nutzt das Teilen-Menü mit englischem Dateinamen', async () => {
+  it('Back up nutzt das Teilen-Menü mit englischem Dateinamen', async () => {
     render(<App />);
     fireEvent.click(tab('Settings'));
     let shared: { files: File[] } | null = null;
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
     Object.defineProperty(navigator, 'share', { configurable: true, value: (o: { files: File[] }) => { shared = o; return Promise.resolve(); } });
-    await act(async () => { fireEvent.click(screen.getByText('Save as file')); });
+    await act(async () => { fireEvent.click(screen.getByText('Back up')); });
     expect(shared!.files[0].name.startsWith('habits-backup-')).toBe(true);
+    expect(JSON.parse(await shared!.files[0].text()).habits).toEqual([]);
+    expect(msg()).toBe('File saved.');
+  });
+
+  it('Restore ersetzt erst nach Bestätigung', async () => {
+    localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }, { id: 'b', name: 'Read', done: {} }]));
+    render(<App />);
+    fireEvent.click(tab('Settings'));
+    chooseFile(JSON.stringify({ app: 'habits', version: 1, habits: [{ id: 'z', name: 'Other', done: { '2026-01-02': true, bad: true } }] }));
+    await vi.waitFor(() => expect(msg()).toMatch(/Replace 2 habits with 1\? Tap Confirm/));
+    expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(2); // noch nichts passiert
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(msg()).toMatch(/Restored: 1 habit/);
+    expect(JSON.parse(localStorage.getItem('habits-v1')!)).toEqual([{ id: 'z', name: 'Other', done: { '2026-01-02': true } }]);
+    expect(document.querySelectorAll('.manage li')).toHaveLength(1);
+    expect(screen.getByText('Restore')).toBeTruthy();
+  });
+
+  it('akzeptiert das ältere Array-Format', async () => {
+    render(<App />);
+    fireEvent.click(tab('Settings'));
+    chooseFile(JSON.stringify([{ id: 'a', name: 'Old', done: {} }]));
+    await vi.waitFor(() => expect(msg()).toMatch(/with 1\? Tap Confirm/));
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(JSON.parse(localStorage.getItem('habits-v1')!)[0].name).toBe('Old');
+  });
+
+  it('meldet ungültige Datei und lässt Daten unverändert', async () => {
+    localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
+    render(<App />);
+    fireEvent.click(tab('Settings'));
+    chooseFile('nonsense');
+    await vi.waitFor(() => expect(msg()).toMatch(/not a valid backup/));
+    expect(screen.getByText('Restore')).toBeTruthy(); // kein Bestätigen-Zustand
+    expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(1);
   });
 });
