@@ -196,7 +196,7 @@ describe('Sichern und Wiederherstellen', () => {
     const code = JSON.stringify({ app: 'habits', version: 1, habits: [{ id: 'z', name: 'Other', done: { '2026-01-02': true, bad: true } }] });
     fireEvent.change(screen.getByLabelText('Paste code'), { target: { value: code } });
     fireEvent.click(screen.getByText('Restore'));
-    expect(msg()).toMatch(/replaces your 2 current habits with 1/);
+    expect(msg()).toMatch(/Replace 2 habits with 1\? Tap again/);
     expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(2); // noch nichts passiert
     fireEvent.click(screen.getByText('Confirm replace'));
     expect(msg()).toMatch(/Restored: 1 habit/);

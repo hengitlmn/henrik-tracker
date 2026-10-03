@@ -38,10 +38,10 @@ export function SettingsView({ habits, update }: Props) {
     const text = exportText(habits);
     if (await copyText(text)) {
       setExportBox(null);
-      setMsg('Code copied. Paste it into the new version under "Restore data".');
+      setMsg('Code copied.');
     } else {
       setExportBox(text);
-      setMsg('Copying failed. The code is selected, please copy it manually.');
+      setMsg('Copying failed. Copy the selected code.');
     }
   };
 
@@ -68,7 +68,7 @@ export function SettingsView({ habits, update }: Props) {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      setMsg('Downloading file. If nothing happens, use "Copy code".');
+      setMsg('Downloading file.');
     } catch {
       setMsg('Saving failed. Use "Copy code".');
     }
@@ -98,10 +98,7 @@ export function SettingsView({ habits, update }: Props) {
     if (!data) { setMsg('This is not a valid backup.'); setPending(null); return; }
     if (!pending) {
       setPending(data);
-      setMsg(
-        'This replaces your ' + habits.length + ' current habit' + (habits.length === 1 ? '' : 's') +
-        ' with ' + data.length + ' from the backup. Tap again to confirm.',
-      );
+      setMsg('Replace ' + habits.length + (habits.length === 1 ? ' habit' : ' habits') + ' with ' + data.length + '? Tap again.');
       return;
     }
     update(() => pending);
@@ -145,7 +142,7 @@ export function SettingsView({ habits, update }: Props) {
 
       <div className="section">
         <h2>Back up data</h2>
-        <p>Your data lives only on this device. Copy the code or save a file to paste it back into a new version of the app.</p>
+        <p>Your data lives only on this device.</p>
         <div className="btns">
           <button className="btn primary" type="button" onClick={copyCode}>Copy code</button>
           <button className="btn" type="button" onClick={saveFile}>Save as file</button>
@@ -157,7 +154,7 @@ export function SettingsView({ habits, update }: Props) {
 
       <div className="section">
         <h2>Restore data</h2>
-        <p>Paste the code from the old version or load the saved file.</p>
+        <p>Paste a code or load a file.</p>
         <textarea
           aria-label="Paste code"
           placeholder="Paste code here"
