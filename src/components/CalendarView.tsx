@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
-import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
+import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import type { Habit } from '../types';
 import type { Slide } from '../hooks';
 import {
@@ -132,6 +132,7 @@ function HabitCard({ habit, week, today, onToggle }: {
               aria-pressed={!!habit.done[k]}
               aria-label={habit.name + ', ' + d.getDate() + ' ' + MONTHS_EN[d.getMonth()]}
               disabled={k > todayKey}
+              style={habit.color ? ({ '--c': habit.color } as CSSProperties) : undefined}
               onClick={() => onToggle(habit.id, k)}
             />
           );

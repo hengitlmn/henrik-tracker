@@ -21,6 +21,7 @@ const weekNumber = () => parseInt(document.querySelector('.nav .label')!.textCon
 
 function addHabit(name: string) {
   openSettings('Habits');
+  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
   fireEvent.change(screen.getByLabelText('New habit'), { target: { value: name } });
   fireEvent.submit(screen.getByLabelText('New habit').closest('form')!);
 }
@@ -71,7 +72,7 @@ describe('Einstellungen', () => {
     render(<App />);
     openSettings('Habits');
     expect(document.querySelector('h1')!.textContent).toBe('Habits');
-    expect(screen.getByLabelText('New habit')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Back to settings'));
     expect(document.querySelectorAll('.row')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Data' }));
@@ -80,6 +81,53 @@ describe('Einstellungen', () => {
     fireEvent.click(tab('Calendar'));
     fireEvent.click(tab('Settings'));
     expect(document.querySelectorAll('.row')).toHaveLength(2); // wieder die Übersicht
+  });
+});
+
+describe('Habits-Einstellungen', () => {
+  it('ist zuerst leer: nur der graue Add-Button', () => {
+    render(<App />);
+    openSettings('Habits');
+    expect(document.querySelector('.addbtn')!.textContent).toBe('Add');
+    expect(screen.queryByLabelText('New habit')).toBeNull();
+    expect(document.querySelectorAll('li')).toHaveLength(0);
+    expect(document.body.textContent).not.toMatch(/No habits|New habit/);
+  });
+
+  it('Add öffnet das Eingabefeld, ein leeres Feld schließt es wieder', () => {
+    render(<App />);
+    openSettings('Habits');
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    const input = screen.getByLabelText('New habit');
+    fireEvent.submit(input.closest('form')!); // leer: nichts passiert
+    expect(document.querySelectorAll('.list li')).toHaveLength(0);
+    fireEvent.blur(input);
+    expect(screen.queryByLabelText('New habit')).toBeNull();
+    expect(document.querySelector('.addbtn')).toBeTruthy();
+  });
+
+  it('jede Gewohnheit ist eine Karte mit Farbwahl, die Farbe färbt die abgehakten Kreise', () => {
+    render(<App />);
+    addHabit('Water');
+    const card = document.querySelector('.list li') as HTMLElement;
+    const group = within(card).getByRole('radiogroup', { name: 'Color for Water' });
+    const radios = within(group).getAllByRole('radio');
+    expect(radios).toHaveLength(7);
+    expect(within(group).getByRole('radio', { name: 'Blue' }).getAttribute('aria-checked')).toBe('true'); // Standard
+    fireEvent.click(within(group).getByRole('radio', { name: 'Green' }));
+    expect(within(group).getByRole('radio', { name: 'Green' }).getAttribute('aria-checked')).toBe('true');
+    expect(JSON.parse(localStorage.getItem('habits-v1')!)[0].color).toBe('#4CC38A');
+
+    fireEvent.click(tab('Calendar'));
+    const dot = document.querySelector('.list .dot.today') as HTMLButtonElement;
+    expect(dot.style.getPropertyValue('--c')).toBe('#4CC38A');
+  });
+
+  it('Farbe bleibt in Sicherung erhalten, ungültige Farben fallen weg', async () => {
+    const { parseBackup, exportText } = await import('./lib/backup');
+    const h = [{ id: 'a', name: 'X', done: {}, color: '#F472B6' }];
+    expect(parseBackup(exportText(h))![0].color).toBe('#F472B6');
+    expect(parseBackup(JSON.stringify([{ name: 'Y', color: 'red' }]))![0].color).toBeUndefined();
   });
 });
 
@@ -125,8 +173,8 @@ describe('Gewohnheiten', () => {
     render(<App />);
     addHabit('Water');
     addHabit('Read');
-    expect(document.querySelectorAll('.manage li')).toHaveLength(2);
-    expect((screen.getByLabelText('New habit') as HTMLInputElement).value).toBe('');
+    expect(document.querySelectorAll('.list li')).toHaveLength(2);
+    expect(screen.queryByLabelText('New habit')).toBeNull(); // Eingabe schließt sich nach dem Hinzufügen
     expect(JSON.parse(localStorage.getItem('habits-v1')!).map((h: { name: string }) => h.name)).toEqual(['Water', 'Read']);
 
     fireEvent.click(tab('Calendar'));
@@ -140,9 +188,9 @@ describe('Gewohnheiten', () => {
 
     openSettings('Habits');
     fireEvent.click(screen.getByLabelText('Remove Water'));
-    expect(document.querySelectorAll('.manage li')).toHaveLength(2); // erster Tipp löscht nicht
+    expect(document.querySelectorAll('.list li')).toHaveLength(2); // erster Tipp löscht nicht
     fireEvent.click(screen.getByLabelText('Remove Water'));
-    expect(document.querySelectorAll('.manage li')).toHaveLength(1);
+    expect(document.querySelectorAll('.list li')).toHaveLength(1);
   });
 
   it('zukünftige Tage sind gesperrt, vergangene nachtragbar', () => {

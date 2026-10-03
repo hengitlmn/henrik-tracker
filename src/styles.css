@@ -94,9 +94,9 @@ li:last-child { border-bottom: 1px solid var(--line); }
 }
 .dot:active:not(:disabled) { transform: scale(.92); }
 .list .dot { border-color: var(--bar-active); }
-.dot[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+.dot[aria-pressed="true"] { background: var(--c, var(--accent)); border-color: var(--c, var(--accent)); }
 .dot.today { border-color: var(--muted); }
-.dot.today[aria-pressed="true"] { border-color: var(--accent); }
+.dot.today[aria-pressed="true"] { border-color: var(--c, var(--accent)); }
 .dot:disabled { opacity: .35; cursor: default; }
 
 form { display: flex; gap: 12px; margin: 0; }
@@ -136,8 +136,6 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .section.first { margin-top: 20px; }
 .section h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 6px; letter-spacing: .02em; }
 .section p { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
-.manage li { padding: 10px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.manage .none { color: var(--muted); font-size: 15px; }
 .remove { font-size: 14px; color: var(--muted); padding: 4px 0 4px 12px; white-space: nowrap; }
 .remove.armed { color: var(--ink); font-weight: 500; }
 .btns { display: flex; gap: 10px; margin-top: 4px; }
@@ -148,6 +146,19 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 }
 .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .btn:active { opacity: .7; }
+/* Habits-Einstellungen: grauer Add-Button, Karten mit Farbwahl */
+.addbtn, .addbox {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  background: var(--bar); border-radius: 28px; min-height: 56px; padding: 8px 10px 8px 18px;
+  font-size: 17px; font-weight: 500; color: var(--muted);
+}
+.addbtn { padding: 8px 18px; }
+.addbtn:active { opacity: .75; }
+.addbox { justify-content: flex-start; }
+.addbox input[type="text"] { border: 0; padding: 8px 0; }
+.swatches { display: flex; justify-content: space-between; padding: 0 4px 2px; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 0; }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--bar), 0 0 0 4px var(--ink); }
 .msg { min-height: 1.4em; margin: 12px 0 0; font-size: 14px; color: var(--ink); }
 
 /* Tab-Leiste unten */

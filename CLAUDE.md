@@ -42,7 +42,8 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 
 ## Datenformat
 
-Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true } }`.
+Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true }, color?: "#RRGGBB" }`.
+`color` ist optional (Farbe der abgehakten Kreise, ohne Angabe der Akzent); alte Daten ohne `color` bleiben gültig.
 
 Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...] }`.
 Der Import akzeptiert zusätzlich das ältere reine Array-Format und verwirft ungültige Datumsschlüssel.
@@ -75,7 +76,8 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
 - Einstellungen im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
   Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:
-  "Habits" (Unterseite: neue Gewohnheit anlegen, Liste, Entfernen mit Doppeltipp) und "Data" (Unterseite: zwei
+  "Habits" (Unterseite: zunächst nur ein grauer "+ Add"-Button; Tipp öffnet ein Eingabefeld; jede Gewohnheit erscheint
+  darunter als graue Karte mit Name, Entfernen per Doppeltipp und Farbwahl für die abgehakten Kreise, 7 Farben) und "Data" (Unterseite: zwei
   Buttons nebeneinander, "Back up" speichert eine Datei über das Teilen-Menü, "Restore" wählt eine Datei und
   braucht dann "Confirm"). Unterseiten haben oben links "‹ Settings" zum Zurückgehen. Wechsel des Tabs setzt
   die Einstellungen auf die Übersicht zurück. Code kopieren/einfügen gibt es nicht mehr.
