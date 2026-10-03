@@ -1,0 +1,4 @@
+# Nur relevant, wenn Netlify per Git deployt (nicht bei Drag-and-drop).
+# Es gibt keinen Build-Schritt, ausgeliefert wird der Ordner public/.
+[build]
+  publish = "public"

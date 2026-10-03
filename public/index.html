@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Habits</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #121212;
+    --ink: #F2F2F0;
+    --muted: #7C7C7C;
+    --line: #2A2A2A;
+    --accent: #6F85FF;
+    --bar: #1E1E1E;
+    --bar-active: #3A3A3A;
+    color-scheme: dark;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  [hidden] { display: none !important; }
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;          /* kein Doppeltipp-Zoom */
+    overscroll-behavior: none;           /* kein Gummiband-Effekt am Rand */
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;                   /* keine versehentliche Textauswahl */
+    -webkit-touch-callout: none;
+  }
+  input, textarea { -webkit-user-select: text; user-select: text; }
+  main { max-width: 480px; margin: 0 auto; padding: 34px 24px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; touch-action: manipulation; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+  header { margin-bottom: 19px; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  header:focus { outline: none; }
+  .day { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+  h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
+  #date {
+    font-family: "Arial Black", "Archivo Black", Arial, sans-serif;
+    font-weight: 900;                    /* Fallback auf Arial Bold, falls beide Black-Schriften fehlen */
+    font-synthesis: none;                /* kein kuenstliches Fett auf bereits schwarzen Schriften */
+    font-size: clamp(24px, 8vw, 32px);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  /* week section: slightly wider than the page column, arrows sit above Monday and Sunday */
+  .weekarea { margin: 0 -8px; touch-action: pan-y; overflow-x: clip; }
+  .nav { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; align-items: center; margin-top: 16px; }
+  .nav .label { grid-column: 2 / 7; text-align: center; font-size: 14px; color: var(--muted); }
+  .nav button { width: 100%; height: 32px; color: var(--ink); font-size: 20px; line-height: 1; text-align: center; }
+  @keyframes weekIn { from { opacity: 0; transform: translateX(var(--wdx, 0px)); } to { opacity: 1; transform: none; } }
+  .week-in { animation: weekIn .28s cubic-bezier(.32,.72,0,1) both; }
+
+  .week, .dots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .week { margin-top: 4px; padding-bottom: 8px; }
+  .week span { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; font-size: 12px; color: var(--muted); }
+  .week b { font-weight: 500; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .week i { font-style: normal; }
+  .week span.today { color: var(--ink); font-weight: 600; }
+  .week span.today b { font-weight: 600; }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { padding: 18px 0; border-top: 1px solid var(--line); }
+  li:last-child { border-bottom: 1px solid var(--line); }
+  /* habit cards: same inner padding as the week header so circles line up with the days above */
+  :root { --card-pad: 12px; }
+  .nav, .week { padding-left: var(--card-pad); padding-right: var(--card-pad); }
+  #list { padding-top: 4px; }
+  #list li { background: var(--bar); border: none; border-radius: 24px; padding: 16px var(--card-pad) 14px; margin-top: 12px; }
+  #list li:last-child { border: none; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .left { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+  .name { font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
+  .streak { font-size: 12px; color: var(--ink); background: var(--bar-active); padding: 4px 10px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .dot {
+    justify-self: center;
+    width: 100%;
+    max-width: 40px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    transition: background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .dot:active:not(:disabled) { transform: scale(.92); }
+  #list .dot { border-color: var(--bar-active); }
+  .dot[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+  .dot.today { border-color: var(--muted); }
+  .dot.today[aria-pressed="true"] { border-color: var(--accent); }
+  .dot:disabled { opacity: .35; cursor: default; }
+
+  form { display: flex; gap: 12px; margin: 0; }
+  input[type="text"], textarea {
+    font: inherit; font-size: 16px; color: var(--ink);
+    background: transparent; border-radius: 0;
+  }
+  input[type="text"] {
+    flex: 1; min-width: 0;
+    border: 0; border-bottom: 1.5px solid var(--line);
+    padding: 10px 0;
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
+  .add { background: var(--ink); color: var(--bg); padding: 0 18px; border-radius: 999px; font-weight: 500; font-size: 15px; min-height: 40px; }
+
+  /* Einstellungen */
+  .page-title { text-align: center; }
+  .section { margin-top: 40px; }
+  .section h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 6px; letter-spacing: .02em; }
+  .section p { margin: 0 0 14px; font-size: 14px; color: var(--muted); }
+  .manage li { padding: 14px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .manage .none { color: var(--muted); font-size: 15px; }
+  .remove { font-size: 14px; color: var(--muted); padding: 4px 0 4px 12px; white-space: nowrap; }
+  .remove.armed { color: var(--ink); font-weight: 500; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .btn {
+    border: 1.5px solid var(--line); border-radius: 999px;
+    padding: 0 18px; min-height: 42px; font-size: 15px; font-weight: 500;
+  }
+  .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn:active { opacity: .7; }
+  textarea {
+    width: 100%; height: 104px; resize: none; display: block; margin-bottom: 12px;
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  textarea:focus { outline: none; border-color: var(--ink); }
+  .msg { min-height: 1.4em; margin: 16px 0 0; font-size: 14px; color: var(--ink); }
+
+  /* Tab-Leiste unten */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    padding: 0 16px max(8px, calc(env(safe-area-inset-bottom, 0px) - 14px));
+    pointer-events: none;
+  }
+  .tabbar-inner {
+    pointer-events: auto;
+    position: relative;
+    max-width: 480px; margin: 0 auto; padding: 6px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+    background: var(--bar); border-radius: 999px;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* sliding highlight behind the active tab */
+  .pill {
+    position: absolute; top: 6px; bottom: 6px; left: 0; width: 0;
+    border-radius: 999px; background: var(--bar-active);
+    transform: translateX(6px);
+    transition: transform .42s cubic-bezier(.32,.72,0,1), width .42s cubic-bezier(.32,.72,0,1);
+    will-change: transform;
+    pointer-events: none;
+  }
+  .pill.drag { transition: none; }
+  .pill.fast { transition-duration: .24s; }
+  .pill.press { transform-origin: center; }
+  .tab { position: relative; z-index: 1; height: 52px; border-radius: 999px; display: grid; place-items: center; color: var(--muted); transition: color .2s ease; -webkit-tap-highlight-color: transparent; }
+  .tab[aria-selected="true"], .tab.hover { color: var(--ink); }
+  .tabbar-inner.dragging .tab[aria-selected="true"]:not(.hover) { color: var(--muted); }
+
+  /* view change */
+  @keyframes viewIn { from { opacity: 0; transform: translateX(var(--dx, 0px)); } to { opacity: 1; transform: none; } }
+  .view-in { animation: viewIn .32s cubic-bezier(.32,.72,0,1) both; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- Tab links: leer -->
+  <div id="viewWrite" hidden></div>
+
+  <!-- Middle tab: calendar -->
+  <div id="viewMain">
+    <header id="head" role="button" tabindex="0" aria-label="Back to current week">
+      <p class="day" id="weekday"></p>
+      <h1 id="date"></h1>
+    </header>
+
+    <div class="weekarea" id="weekarea">
+    <div class="nav" id="nav">
+      <button id="prev" type="button" aria-label="Previous week">‹</button>
+      <span class="label" id="weeklabel"></span>
+      <button id="next" type="button" aria-label="Next week">›</button>
+    </div>
+    <div class="week" id="week" aria-hidden="true"></div>
+    <ul id="list"></ul>
+    </div>
+  </div>
+
+  <!-- Right tab: settings -->
+  <div id="viewSettings" hidden>
+    <h1 class="page-title">Settings</h1>
+
+    <div class="section">
+      <h2>New habit</h2>
+      <form id="form" autocomplete="off">
+        <input id="input" type="text" maxlength="60" placeholder="Habit name" aria-label="New habit" enterkeyhint="done">
+        <button class="add" type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="section">
+      <h2>Habits</h2>
+      <ul class="manage" id="manage"></ul>
+    </div>
+
+    <div class="section">
+      <h2>Back up data</h2>
+      <p>Your data lives only on this device. Copy the code or save a file to paste it back into a new version of the app.</p>
+      <div class="btns">
+        <button class="btn primary" id="copy" type="button">Copy code</button>
+        <button class="btn" id="saveFile" type="button">Save as file</button>
+      </div>
+      <textarea id="exportBox" aria-label="Code to copy manually" readonly hidden style="margin-top:12px"></textarea>
+    </div>
+
+    <div class="section">
+      <h2>Restore data</h2>
+      <p>Paste the code from the old version or load the saved file.</p>
+      <textarea id="importBox" aria-label="Paste code" placeholder="Paste code here" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+      <div class="btns">
+        <button class="btn" id="loadFile" type="button">Load file</button>
+        <button class="btn primary" id="restore" type="button">Restore</button>
+      </div>
+      <input type="file" id="fileInput" accept=".json,application/json,text/plain" hidden>
+    </div>
+
+    <p class="msg" id="msg" role="status"></p>
+  </div>
+
+</main>
+
+<nav class="tabbar" aria-label="Main navigation">
+  <div class="tabbar-inner" id="tabbar" role="tablist">
+    <div class="pill" id="pill" aria-hidden="true"></div>
+    <button class="tab" id="tabWrite" role="tab" aria-selected="false" aria-label="Write" type="button">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4.5 19.5l.9-3.9L16.6 4.4a1.9 1.9 0 0 1 2.7 0l.3.3a1.9 1.9 0 0 1 0 2.7L8.4 18.6l-3.9.9z"/>
+        <line x1="14.5" y1="6.5" x2="17.5" y2="9.5"/>
+      </svg>
+    </button>
+    <button class="tab" id="tabCal" role="tab" aria-selected="true" aria-label="Calendar" type="button">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/>
+        <line x1="4" y1="10.5" x2="20" y2="10.5"/>
+        <line x1="8.5" y1="3.5" x2="8.5" y2="7.5"/>
+        <line x1="15.5" y1="3.5" x2="15.5" y2="7.5"/>
+      </svg>
+    </button>
+    <button class="tab" id="tabSettings" role="tab" aria-selected="false" aria-label="Settings" type="button">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <line x1="4" y1="8" x2="20" y2="8"/>
+        <line x1="4" y1="16" x2="20" y2="16"/>
+        <circle cx="9" cy="8" r="2.3" style="fill:var(--bg)"/>
+        <circle cx="15" cy="16" r="2.3" style="fill:var(--bg)"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<script>
+(function () {
+  var KEY = 'habits-v1';
+  var DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  var WEEKDAYS_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+  var habits = load();
+  var weekOffset = 0;      // 0 = this week, -1 = last week, +1 = next week, ...
+  var restoreArmed = false;
+  var pendingRestore = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var data = raw ? JSON.parse(raw) : [];
+      return Array.isArray(data) ? data : [];
+    } catch (e) { return []; }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(habits)); } catch (e) {}
+  }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function addDays(d, n) { var c = new Date(d); c.setDate(c.getDate() + n); return c; }
+
+  function weekDates(base) {
+    var offset = (base.getDay() + 6) % 7; // Montag = 0
+    var monday = addDays(base, -offset);
+    var out = [];
+    for (var i = 0; i < 7; i++) out.push(addDays(monday, i));
+    return out;
+  }
+
+  function streak(h, today) {
+    var d = new Date(today);
+    if (!h.done[keyOf(d)]) d = addDays(d, -1);
+    var n = 0;
+    while (h.done[keyOf(d)]) { n++; d = addDays(d, -1); }
+    return n;
+  }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  // ISO 8601 week number of the week that contains the given day
+  function isoWeek(d) {
+    var t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7));   // Thursday of that week
+    var w1 = new Date(t.getFullYear(), 0, 4);
+    return 1 + Math.round(((t - w1) / 86400000 - 3 + ((w1.getDay() + 6) % 7)) / 7);
+  }
+
+  /* ---------- Main view ---------- */
+  function renderMain() {
+    var today = new Date();
+    var todayKey = keyOf(today);
+    var week = weekDates(addDays(today, weekOffset * 7));
+
+    $('weekday').textContent = WEEKDAYS_EN[today.getDay()];
+    $('date').textContent = pad(today.getDate()) + '. ' + MONTHS_EN[today.getMonth()];
+
+    $('weeklabel').textContent = 'Week ' + isoWeek(week[0]);
+
+    var weekEl = $('week');
+    weekEl.textContent = '';
+    week.forEach(function (d, i) {
+      var cell = el('span', keyOf(d) === todayKey ? 'today' : '');
+      cell.appendChild(el('b', 'num', pad(d.getDate())));
+      cell.appendChild(el('i', 'let', DAYS[i]));
+      weekEl.appendChild(cell);
+    });
+
+    var list = $('list');
+    list.textContent = '';
+    habits.forEach(function (h) {
+      if (!h.done) h.done = {};
+      var li = el('li');
+      var top = el('div', 'top');
+      var left = el('div', 'left');
+      left.appendChild(el('span', 'name', h.name));
+      var s = streak(h, today);
+      top.appendChild(left);
+      if (s > 0) top.appendChild(el('span', 'streak', s + (s === 1 ? ' day' : ' days')));
+      li.appendChild(top);
+
+      var dots = el('div', 'dots');
+      week.forEach(function (d) {
+        var k = keyOf(d);
+        var b = el('button', 'dot' + (k === todayKey ? ' today' : ''));
+        b.type = 'button';
+        b.setAttribute('aria-pressed', h.done[k] ? 'true' : 'false');
+        b.setAttribute('aria-label', h.name + ', ' + d.getDate() + ' ' + MONTHS_EN[d.getMonth()]);
+        if (k > todayKey) b.disabled = true;
+        b.addEventListener('click', function () {
+          if (h.done[k]) delete h.done[k]; else h.done[k] = true;
+          save(); renderMain();
+        });
+        dots.appendChild(b);
+      });
+      li.appendChild(dots);
+      list.appendChild(li);
+    });
+  }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('input');
+    var name = input.value.trim();
+    if (!name) return;
+    habits.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name, done: {} });
+    input.value = '';
+    save(); renderMain(); renderManage();
+  });
+
+  // Change week (dir: +1 slides in from the right, -1 from the left) with a short slide-in
+  function slideWeek(dir) {
+    var a = $('weekarea');
+    a.style.setProperty('--wdx', (dir * 28) + 'px');
+    a.classList.remove('week-in'); void a.offsetWidth; a.classList.add('week-in');
+  }
+  function changeWeek(delta) {
+    weekOffset += delta;
+    renderMain();
+    slideWeek(delta > 0 ? 1 : -1);
+  }
+
+  // Tap the date to jump back to the current week
+  function goToday() {
+    if (weekOffset === 0) return;
+    var dir = weekOffset < 0 ? 1 : -1;
+    weekOffset = 0;
+    renderMain();
+    slideWeek(dir);
+  }
+  $('head').addEventListener('click', goToday);
+  $('head').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToday(); }
+  });
+
+  $('prev').addEventListener('click', function () { changeWeek(-1); });
+  $('next').addEventListener('click', function () { changeWeek(1); });
+
+  // Swipe left/right anywhere in the week section to change the week
+  (function () {
+    var area = $('weekarea');
+    var sx = 0, sy = 0, tracking = false, swallow = false;
+    area.addEventListener('pointerdown', function (e) {
+      if (e.button) return;
+      tracking = true; sx = e.clientX; sy = e.clientY;
+    });
+    area.addEventListener('pointerup', function (e) {
+      if (!tracking) return;
+      tracking = false;
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        swallow = true;                       // do not let the release toggle a dot
+        setTimeout(function () { swallow = false; }, 60);
+        changeWeek(dx < 0 ? 1 : -1);          // swipe left = next week
+      }
+    });
+    area.addEventListener('pointercancel', function () { tracking = false; });
+    area.addEventListener('click', function (e) {
+      if (swallow) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })();
+
+  /* ---------- Settings ---------- */
+  function setMsg(t) { $('msg').textContent = t || ''; }
+
+  var currentTab = 'cal';
+  var VIEWS = { write: 'viewWrite', cal: 'viewMain', settings: 'viewSettings' };
+  var TABS = { write: 'tabWrite', cal: 'tabCal', settings: 'tabSettings' };
+
+  var ORDER = ['write', 'cal', 'settings'];
+
+  // Sliding highlight: position it under a tab (animated) or at an x offset (while dragging)
+  function tabGeometry() {
+    var inner = $('tabbar');
+    var innerW = inner.clientWidth;
+    var gap = 4, pad = 6;
+    var tabW = (innerW - pad * 2 - gap * 2) / 3;
+    return { innerW: innerW, pad: pad, gap: gap, tabW: tabW };
+  }
+  function placePill(index, animate) {
+    var g = tabGeometry(), pill = $('pill');
+    if (!animate) pill.style.transition = 'none';
+    pill.style.width = g.tabW + 'px';
+    pill.style.transform = 'translateX(' + (g.pad + index * (g.tabW + g.gap)) + 'px)';
+    if (!animate) { void pill.offsetWidth; pill.style.transition = ''; }
+  }
+
+  function showTab(name) {
+    if (name === currentTab) return;
+    var dx = ORDER.indexOf(name) > ORDER.indexOf(currentTab) ? 28 : -28;
+    currentTab = name;
+    placePill(ORDER.indexOf(name), true);
+    Object.keys(VIEWS).forEach(function (k) {
+      $(VIEWS[k]).hidden = (k !== name);
+      $(TABS[k]).setAttribute('aria-selected', k === name ? 'true' : 'false');
+    });
+    if (name === 'settings') {
+      $('exportBox').hidden = true;
+      $('importBox').value = '';
+      resetRestore();
+      setMsg('');
+      renderManage();
+    }
+    if (name === 'cal') renderMain();
+    window.scrollTo(0, 0);
+    var v = $(VIEWS[name]);
+    v.style.setProperty('--dx', dx + 'px');
+    v.classList.remove('view-in'); void v.offsetWidth; v.classList.add('view-in');
+  }
+  Object.keys(TABS).forEach(function (k) {
+    $(TABS[k]).addEventListener('click', function () { showTab(k); });
+  });
+
+  /* Press and slide a finger over the bar: the highlight follows, release selects */
+  (function () {
+    var inner = $('tabbar'), pill = $('pill');
+    var dragging = false, down = false, startX = 0, hoverIdx = -1, fastTimer = null;
+    function indexAt(x) {
+      var r = inner.getBoundingClientRect();
+      var g = tabGeometry();
+      var rel = (x - r.left - g.pad) / (g.innerW - g.pad * 2);
+      return Math.max(0, Math.min(2, Math.floor(rel * 3)));
+    }
+    function setHover(i) {
+      if (i === hoverIdx) return;
+      hoverIdx = i;
+      ORDER.forEach(function (k, n) { $(TABS[k]).classList.toggle('hover', n === i); });
+    }
+    function follow(x) {
+      var r = inner.getBoundingClientRect();
+      var g = tabGeometry();
+      var left = x - r.left - g.tabW / 2;
+      left = Math.max(g.pad, Math.min(g.innerW - g.pad - g.tabW, left));
+      pill.style.transform = 'translateX(' + left + 'px) scale(1.06)';
+      setHover(indexAt(x));
+    }
+    function startDrag(x) {
+      dragging = true;
+      hoverIdx = -2;
+      inner.classList.add('dragging');
+      pill.classList.add('drag');
+      follow(x);
+    }
+    function finish() {
+      down = false;
+      dragging = false;
+      inner.classList.remove('dragging');
+      pill.classList.remove('drag');
+      setHover(-1);
+      ORDER.forEach(function (k) { $(TABS[k]).classList.remove('hover'); });
+    }
+    inner.addEventListener('pointerdown', function (e) {
+      if (e.button) return;
+      down = true;
+      startX = e.clientX;
+      try { inner.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    inner.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      if (!dragging && Math.abs(e.clientX - startX) > 6) startDrag(e.clientX);
+      else if (dragging) follow(e.clientX);
+    });
+    inner.addEventListener('pointerup', function (e) {
+      if (!down) return;
+      if (dragging) {
+        var i = hoverIdx;
+        finish();
+        placePill(ORDER.indexOf(currentTab), true);   // settle back first, showTab moves it if the tab changed
+        showTab(i >= 0 ? ORDER[i] : currentTab);
+      } else {
+        // plain tap: slide over quickly
+        finish();
+        pill.classList.add('fast');
+        clearTimeout(fastTimer);
+        fastTimer = setTimeout(function () { pill.classList.remove('fast'); }, 350);
+        showTab(ORDER[indexAt(e.clientX)]);
+      }
+    });
+    inner.addEventListener('pointercancel', function () {
+      if (!down) return;
+      finish();
+      placePill(ORDER.indexOf(currentTab), true);
+    });
+    window.addEventListener('resize', function () { placePill(ORDER.indexOf(currentTab), false); });
+    placePill(ORDER.indexOf(currentTab), false);
+  })();
+
+  function renderManage() {
+    var ul = $('manage');
+    ul.textContent = '';
+    if (!habits.length) {
+      var li0 = el('li');
+      li0.appendChild(el('span', 'none', 'No habits.'));
+      ul.appendChild(li0);
+      return;
+    }
+    habits.forEach(function (h) {
+      var li = el('li');
+      li.appendChild(el('span', 'name', h.name));
+      var rm = el('button', 'remove', 'Remove');
+      rm.type = 'button';
+      rm.setAttribute('aria-label', 'Remove ' + h.name);
+      var timer = null;
+      rm.addEventListener('click', function () {
+        if (!rm.classList.contains('armed')) {
+          rm.classList.add('armed');
+          rm.textContent = 'Sure?';
+          timer = setTimeout(function () { rm.classList.remove('armed'); rm.textContent = 'Remove'; }, 3000);
+          return;
+        }
+        clearTimeout(timer);
+        habits = habits.filter(function (x) { return x.id !== h.id; });
+        save(); renderManage();
+      });
+      li.appendChild(rm);
+      ul.appendChild(li);
+    });
+  }
+
+  /* Backup: export */
+  function exportText() {
+    return JSON.stringify({ app: 'habits', version: 1, exported: new Date().toISOString(), habits: habits });
+  }
+
+  function copyText(text) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { ta.setSelectionRange(0, text.length); } catch (e) {}
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      return ok;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallback(); });
+    }
+    return Promise.resolve(fallback());
+  }
+
+  $('copy').addEventListener('click', function () {
+    var text = exportText();
+    copyText(text).then(function (ok) {
+      if (ok) {
+        $('exportBox').hidden = true;
+        setMsg('Code copied. Paste it into the new version under "Restore data".');
+      } else {
+        var box = $('exportBox');
+        box.value = text; box.hidden = false;
+        box.focus(); box.select();
+        setMsg('Copying failed. The code is selected, please copy it manually.');
+      }
+    });
+  });
+
+  $('saveFile').addEventListener('click', function () {
+    var text = exportText();
+    var name = 'habits-backup-' + keyOf(new Date()) + '.json';
+    var file = null;
+    try { file = new File([text], name, { type: 'application/json' }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      navigator.share({ files: [file], title: 'Habits backup' }).then(function () {
+        setMsg('File saved.');
+      }, function (err) {
+        if (!err || err.name !== 'AbortError') setMsg('Saving failed. Use "Copy code".');
+      });
+      return;
+    }
+    try {
+      var blob = new Blob([text], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      setMsg('Downloading file. If nothing happens, use "Copy code".');
+    } catch (e) {
+      setMsg('Saving failed. Use "Copy code".');
+    }
+  });
+
+  /* Backup: import */
+  function resetRestore() {
+    restoreArmed = false;
+    pendingRestore = null;
+    $('restore').textContent = 'Restore';
+  }
+
+  // Accepts the new format ({habits:[...]}) and older backups (plain array)
+  function parseBackup(text) {
+    var data;
+    try { data = JSON.parse(text); } catch (e) { return null; }
+    var arr = Array.isArray(data) ? data : (data && Array.isArray(data.habits) ? data.habits : null);
+    if (!arr) return null;
+    var out = [];
+    for (var i = 0; i < arr.length; i++) {
+      var h = arr[i];
+      if (!h || typeof h.name !== 'string' || !h.name.trim()) return null;
+      var done = {};
+      var src = (h.done && typeof h.done === 'object') ? h.done : {};
+      Object.keys(src).forEach(function (k) { if (DATE_RE.test(k) && src[k]) done[k] = true; });
+      out.push({
+        id: (typeof h.id === 'string' && h.id) ? h.id : Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i,
+        name: h.name.trim().slice(0, 60),
+        done: done
+      });
+    }
+    return out;
+  }
+
+  $('importBox').addEventListener('input', function () { resetRestore(); });
+
+  $('loadFile').addEventListener('click', function () { $('fileInput').click(); });
+  $('fileInput').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var input = this;
+    var r = new FileReader();
+    r.onload = function () {
+      $('importBox').value = String(r.result || '');
+      resetRestore();
+      setMsg('File loaded. Tap "Restore".');
+      input.value = '';
+    };
+    r.onerror = function () { setMsg('The file could not be read.'); };
+    r.readAsText(f);
+  });
+
+  $('restore').addEventListener('click', function () {
+    var text = $('importBox').value.trim();
+    if (!text) { setMsg('Paste a code or load a file first.'); return; }
+    var data = parseBackup(text);
+    if (!data) { setMsg('This is not a valid backup.'); resetRestore(); return; }
+    if (!restoreArmed) {
+      restoreArmed = true;
+      pendingRestore = data;
+      $('restore').textContent = 'Confirm replace';
+      setMsg('This replaces your ' + habits.length + ' current habit' + (habits.length === 1 ? '' : 's') + ' with ' + data.length + ' from the backup. Tap again to confirm.');
+      return;
+    }
+    habits = pendingRestore;
+    save();
+    resetRestore();
+    $('importBox').value = '';
+    renderManage();
+    setMsg('Restored: ' + habits.length + (habits.length === 1 ? ' habit.' : ' habits.'));
+  });
+
+  /* ---------- Block zoom ---------- */
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) {
+    document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+
+  // Refresh the date when the app is reopened after midnight
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && currentTab === 'cal') renderMain();
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
+  renderMain();
+})();
+</script>
+</body>
+</html>
