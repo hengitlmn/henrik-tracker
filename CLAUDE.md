@@ -73,9 +73,12 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     Stats (Kurve nach oben), Einstellungen (Zahnrad)
   - Profil, To-do und Stats sind bewusst noch leer (für spätere Features)
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
-- Einstellungen (passen auf eine Seite, kurze Texte): Neue Gewohnheit anlegen (Eingabefeld ganz oben), Gewohnheiten entfernen
-  (zweiter Tipp bestätigt), darunter zwei Buttons nebeneinander: "Back up" (Download-Symbol, speichert eine Datei über
-  das Teilen-Menü) und "Restore" (Upload-Symbol, Datei wählen, dann "Confirm"). Code kopieren/einfügen gibt es nicht mehr.
+- Einstellungen im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
+  Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:
+  "Habits" (Unterseite: neue Gewohnheit anlegen, Liste, Entfernen mit Doppeltipp) und "Data" (Unterseite: zwei
+  Buttons nebeneinander, "Back up" speichert eine Datei über das Teilen-Menü, "Restore" wählt eine Datei und
+  braucht dann "Confirm"). Unterseiten haben oben links "‹ Settings" zum Zurückgehen. Wechsel des Tabs setzt
+  die Einstellungen auf die Übersicht zurück. Code kopieren/einfügen gibt es nicht mehr.
 - Alle Icons sind einfache Inline-SVGs mit `currentColor`, Strichstärke 1.6.
 
 ## App-Icon

@@ -114,8 +114,26 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .add { background: var(--ink); color: var(--bg); padding: 0 18px; border-radius: 999px; font-weight: 500; font-size: 15px; min-height: 40px; }
 
 /* Einstellungen */
-.page-title { text-align: center; }
+.page-title { text-align: center; font-size: 20px; margin: 0; }
+.account {
+  display: flex; align-items: center; gap: 16px; width: 100%; text-align: left;
+  background: var(--bar); border-radius: 28px; padding: 22px 18px;
+}
+.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--bar-active); color: var(--muted); display: grid; place-items: center; flex: none; }
+.account .title { flex: 1; font-size: 20px; font-weight: 600; }
+.chev { color: var(--muted); flex: none; }
+.rows { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+.row {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  background: var(--bar); border-radius: 28px; padding: 10px 16px 10px 12px; min-height: 56px; font-size: 17px;
+}
+.row .tile { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; flex: none; }
+.row .label { flex: 1; }
+.account:active, .row:active { opacity: .75; }
+.subhead { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.back { display: inline-flex; align-items: center; gap: 2px; justify-self: start; color: var(--accent); font-size: 17px; padding: 6px 0; }
 .section { margin-top: 24px; }
+.section.first { margin-top: 20px; }
 .section h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 6px; letter-spacing: .02em; }
 .section p { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
 .manage li { padding: 10px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }

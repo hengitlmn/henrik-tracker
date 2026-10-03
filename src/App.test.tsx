@@ -11,10 +11,16 @@ beforeEach(() => {
 });
 
 const tab = (name: string) => screen.getByRole('tab', { name });
+/** Einstellungen öffnen und optional direkt in "Habits" oder "Data" springen */
+const openSettings = (page?: 'Habits' | 'Data') => {
+  fireEvent.click(tab('Settings'));
+  const row = page && screen.queryByRole('button', { name: page });
+  if (row) fireEvent.click(row); // schon auf der Unterseite: nichts zu tun
+};
 const weekNumber = () => parseInt(document.querySelector('.nav .label')!.textContent!.replace('Week ', ''), 10);
 
 function addHabit(name: string) {
-  fireEvent.click(tab('Settings'));
+  openSettings('Habits');
   fireEvent.change(screen.getByLabelText('New habit'), { target: { value: name } });
   fireEvent.submit(screen.getByLabelText('New habit').closest('form')!);
 }
@@ -48,6 +54,32 @@ describe('Start und Tabs', () => {
     render(<App />);
     fireEvent.click(tab('Settings'));
     expect(document.querySelector('[data-view="settings"]')!.classList.contains('view-in')).toBe(true);
+  });
+});
+
+describe('Einstellungen', () => {
+  it('zeigt Konto-Karte und zwei Zeilen, keine Überschrift', () => {
+    render(<App />);
+    openSettings();
+    expect(document.querySelector('h1')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
+    expect([...document.querySelectorAll('.row')].map((r) => r.textContent)).toEqual(['Habits', 'Data']);
+    expect(document.querySelector('.avatar')).toBeTruthy();
+  });
+
+  it('Zeilen öffnen Unterseiten, Zurück führt zur Übersicht, Tab-Wechsel setzt zurück', () => {
+    render(<App />);
+    openSettings('Habits');
+    expect(document.querySelector('h1')!.textContent).toBe('Habits');
+    expect(screen.getByLabelText('New habit')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Back to settings'));
+    expect(document.querySelectorAll('.row')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Data' }));
+    expect(document.querySelector('h1')!.textContent).toBe('Data');
+    expect(screen.getByText('Back up')).toBeTruthy();
+    fireEvent.click(tab('Calendar'));
+    fireEvent.click(tab('Settings'));
+    expect(document.querySelectorAll('.row')).toHaveLength(2); // wieder die Übersicht
   });
 });
 
@@ -106,7 +138,7 @@ describe('Gewohnheiten', () => {
     const stored = JSON.parse(localStorage.getItem('habits-v1')!);
     expect(stored[0].done[keyOf(new Date())]).toBe(true);
 
-    fireEvent.click(tab('Settings'));
+    openSettings('Habits');
     fireEvent.click(screen.getByLabelText('Remove Water'));
     expect(document.querySelectorAll('.manage li')).toHaveLength(2); // erster Tipp löscht nicht
     fireEvent.click(screen.getByLabelText('Remove Water'));
@@ -188,7 +220,7 @@ describe('Sichern und Wiederherstellen', () => {
 
   it('zeigt zwei Buttons nebeneinander, kein Code-Feld mehr', () => {
     render(<App />);
-    fireEvent.click(tab('Settings'));
+    openSettings('Data');
     const btns = document.querySelector('.btns')!;
     expect([...btns.querySelectorAll('button')].map((b) => b.textContent!.trim())).toEqual(['Back up', 'Restore']);
     expect(btns.querySelectorAll('svg')).toHaveLength(2);
@@ -198,7 +230,7 @@ describe('Sichern und Wiederherstellen', () => {
 
   it('Back up nutzt das Teilen-Menü mit englischem Dateinamen', async () => {
     render(<App />);
-    fireEvent.click(tab('Settings'));
+    openSettings('Data');
     let shared: { files: File[] } | null = null;
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
     Object.defineProperty(navigator, 'share', { configurable: true, value: (o: { files: File[] }) => { shared = o; return Promise.resolve(); } });
@@ -211,20 +243,19 @@ describe('Sichern und Wiederherstellen', () => {
   it('Restore ersetzt erst nach Bestätigung', async () => {
     localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }, { id: 'b', name: 'Read', done: {} }]));
     render(<App />);
-    fireEvent.click(tab('Settings'));
+    openSettings('Data');
     chooseFile(JSON.stringify({ app: 'habits', version: 1, habits: [{ id: 'z', name: 'Other', done: { '2026-01-02': true, bad: true } }] }));
     await vi.waitFor(() => expect(msg()).toMatch(/Replace 2 habits with 1\? Tap Confirm/));
     expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(2); // noch nichts passiert
     fireEvent.click(screen.getByText('Confirm'));
     expect(msg()).toMatch(/Restored: 1 habit/);
     expect(JSON.parse(localStorage.getItem('habits-v1')!)).toEqual([{ id: 'z', name: 'Other', done: { '2026-01-02': true } }]);
-    expect(document.querySelectorAll('.manage li')).toHaveLength(1);
     expect(screen.getByText('Restore')).toBeTruthy();
   });
 
   it('akzeptiert das ältere Array-Format', async () => {
     render(<App />);
-    fireEvent.click(tab('Settings'));
+    openSettings('Data');
     chooseFile(JSON.stringify([{ id: 'a', name: 'Old', done: {} }]));
     await vi.waitFor(() => expect(msg()).toMatch(/with 1\? Tap Confirm/));
     fireEvent.click(screen.getByText('Confirm'));
@@ -234,7 +265,7 @@ describe('Sichern und Wiederherstellen', () => {
   it('meldet ungültige Datei und lässt Daten unverändert', async () => {
     localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
     render(<App />);
-    fireEvent.click(tab('Settings'));
+    openSettings('Data');
     chooseFile('nonsense');
     await vi.waitFor(() => expect(msg()).toMatch(/not a valid backup/));
     expect(screen.getByText('Restore')).toBeTruthy(); // kein Bestätigen-Zustand
