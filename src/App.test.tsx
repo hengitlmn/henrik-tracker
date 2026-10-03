@@ -105,6 +105,19 @@ describe('Habits-Einstellungen', () => {
     expect(document.body.textContent).not.toMatch(/No habits|New habit/);
   });
 
+  it('Add steht immer unter der letzten Gewohnheit, Zurück-Leiste ist fest', () => {
+    render(<App />);
+    addHabit('One');
+    addHabit('Two');
+    const list = document.querySelector('.list')!;
+    expect(list.children).toHaveLength(2);
+    expect(list.nextElementSibling!.classList.contains('addbtn')).toBe(true);
+    const head = document.querySelector('.subhead')!;
+    expect(head.querySelector('[aria-label="Back to settings"]')).toBeTruthy();
+    expect(head.querySelector('h1')!.textContent).toBe('Habits');
+    expect(head.nextElementSibling!.contains(list)).toBe(true); // Inhalt liegt außerhalb der festen Leiste
+  });
+
   it('Add öffnet das Eingabefeld, ein leeres Feld schließt es wieder', () => {
     render(<App />);
     openSettings('Habits');

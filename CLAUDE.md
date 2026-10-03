@@ -39,7 +39,12 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 4. **Keine sichtbare Scroll-Leiste** (in `styles.css` ausgeblendet, Scrollen funktioniert weiter).
 5. **Zoom bleibt gesperrt** (Viewport-Meta, `touch-action`, Gesten-Events). Eingabefelder mindestens 16px Schrift.
 6. **Tests dürfen `localStorage` nutzen**, es wird nach jedem Test geleert (`src/test-setup.ts`).
-7. **Dateien nie mit `open(f, 'w')` im selben Ausdruck lesen und schreiben** (leert die Datei). Erst lesen, dann schreiben.
+7. **Scroll-Prinzip für jede Seite:** Kopfbereiche bleiben beim Scrollen fest (`position: sticky; top: 0`, mit
+   `margin-top: -34px; padding-top: 34px` gegen das obere Padding von `main`, Hintergrund `var(--bg)`, kleiner
+   Ausblendverlauf darunter), nur der Inhalt scrollt darunter durch. Beispiele: Tag/Datum/Wochenzeile im Kalender,
+   "‹ Settings" plus Titel auf Unterseiten. Bei neuen Seiten selbst entscheiden, was fest bleibt (Titel, Zurück,
+   Filter, Wochenleiste), ohne dass der Nutzer es jedes Mal sagt. "Add"-Buttons stehen unter dem letzten Eintrag.
+8. **Dateien nie mit `open(f, 'w')` im selben Ausdruck lesen und schreiben** (leert die Datei). Erst lesen, dann schreiben.
 
 ## Datenformat
 

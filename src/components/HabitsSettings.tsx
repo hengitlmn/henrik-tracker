@@ -15,7 +15,10 @@ export function HabitsSettings({ habits, update }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (adding) inputRef.current?.focus();
+    if (adding) {
+      inputRef.current?.focus();
+      inputRef.current?.scrollIntoView?.({ block: 'nearest' });
+    }
   }, [adding]);
 
   const addHabit = (e: FormEvent) => {
@@ -32,30 +35,6 @@ export function HabitsSettings({ habits, update }: Props) {
 
   return (
     <div className="section first">
-      {adding ? (
-        <form className="addbox" autoComplete="off" onSubmit={addHabit}>
-          <input
-            ref={inputRef}
-            type="text"
-            maxLength={60}
-            placeholder="Habit name"
-            aria-label="New habit"
-            enterKeyHint="done"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => { if (!name.trim()) setAdding(false); }}
-          />
-          <button className="add" type="submit">Add</button>
-        </form>
-      ) : (
-        <button type="button" className="addbtn" onClick={() => setAdding(true)}>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add
-        </button>
-      )}
-
       <ul className="list">
         {habits.map((h) => {
           const current = h.color ?? DEFAULT_COLOR;
@@ -83,6 +62,31 @@ export function HabitsSettings({ habits, update }: Props) {
           );
         })}
       </ul>
+
+      {/* Add steht immer unter der letzten Gewohnheit */}
+      {adding ? (
+        <form className="addbox addwrap" autoComplete="off" onSubmit={addHabit}>
+          <input
+            ref={inputRef}
+            type="text"
+            maxLength={60}
+            placeholder="Habit name"
+            aria-label="New habit"
+            enterKeyHint="done"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => { if (!name.trim()) setAdding(false); }}
+          />
+          <button className="add" type="submit">Add</button>
+        </form>
+      ) : (
+        <button type="button" className="addbtn addwrap" onClick={() => setAdding(true)}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add
+        </button>
+      )}
     </div>
   );
 }
