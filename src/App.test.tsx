@@ -41,6 +41,17 @@ describe('Start und Tabs', () => {
     expect(screen.getByLabelText('Back to current week')).toBeTruthy();
   });
 
+  it('Kopf, Datum und Wochenzeile liegen im festen Bereich, die Karten außerhalb', () => {
+    localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
+    render(<App />);
+    const top = document.querySelector('.sticky-top')!;
+    expect(top.querySelector('.head')).toBeTruthy();
+    expect(top.querySelector('.nav')).toBeTruthy();
+    expect(top.querySelector('.week')).toBeTruthy();
+    expect(top.querySelector('.list')).toBeNull();
+    expect(document.querySelector('.list')!.closest('.sticky-top')).toBeNull();
+  });
+
   it('zeigt ohne Gewohnheit sofort die Wochenzeile und keinen Leertext', () => {
     render(<App />);
     expect(document.body.textContent).not.toMatch(/Noch keine|No habits yet/);
@@ -147,7 +158,7 @@ describe('Wochen', () => {
     expect(weekNumber()).not.toBe(base);
     fireEvent.click(screen.getByLabelText('Back to current week'));
     expect(weekNumber()).toBe(base);
-    expect(document.querySelector('.weekarea')!.classList.contains('week-in')).toBe(true);
+    expect(document.querySelectorAll('.week-in').length).toBeGreaterThan(0); // Hereingleiten der Woche
   });
 
   it('Wischen im Wochenbereich wechselt die Woche', () => {

@@ -58,6 +58,16 @@ h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.
 
 /* Wochenbereich: etwas breiter als die Seite, Pfeile über Montag und Sonntag */
 .weekarea { margin: 0 -8px; touch-action: pan-y; overflow-x: clip; }
+/* Kopf (Tag, Datum, Wochenzeile) bleibt oben stehen; die Karten scrollen darunter durch */
+.sticky-top {
+  position: sticky; top: 0; z-index: 5;
+  margin-top: -34px; padding-top: 34px;   /* gleicht das obere Padding von main aus, Position bleibt gleich */
+  background: var(--bg);
+}
+.sticky-top::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -14px; height: 14px; pointer-events: none;
+  background: linear-gradient(var(--bg), rgba(18, 18, 18, 0));
+}
 .nav { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; align-items: center; margin-top: 16px; }
 .nav .label { grid-column: 2 / 7; text-align: center; font-size: 14px; color: var(--muted); }
 .nav button { width: 100%; height: 32px; color: var(--ink); font-size: 20px; line-height: 1; text-align: center; }

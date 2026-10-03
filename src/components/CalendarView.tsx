@@ -23,12 +23,14 @@ export function CalendarView({ habits, today, weekOffset, slide, onChangeWeek, o
   // Kurzes Hereingleiten bei jedem Wochenwechsel (Klasse neu setzen, ohne das Element neu zu erzeugen)
   const areaRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    const el = areaRef.current;
-    if (!el || !slide.n) return;
-    el.style.setProperty('--wdx', slide.dir * 28 + 'px');
-    el.classList.remove('week-in');
-    void el.offsetWidth;
-    el.classList.add('week-in');
+    const root = areaRef.current;
+    if (!root || !slide.n) return;
+    root.querySelectorAll<HTMLElement>('[data-slide]').forEach((el) => {
+      el.style.setProperty('--wdx', slide.dir * 28 + 'px');
+      el.classList.remove('week-in');
+      void el.offsetWidth;
+      el.classList.add('week-in');
+    });
   }, [slide.n, slide.dir]);
 
   // Wischen im Wochenbereich wechselt die Woche
@@ -66,27 +68,28 @@ export function CalendarView({ habits, today, weekOffset, slide, onChangeWeek, o
   };
 
   return (
-    <div>
-      <header className="head" role="button" tabIndex={0} aria-label="Back to current week" onClick={onToday} onKeyDown={onHeadKey}>
-        <p className="day">{WEEKDAYS_EN[today.getDay()]}</p>
-        <h1 className="date">{pad(today.getDate())}. {MONTHS_EN[today.getMonth()]}</h1>
-      </header>
+    <div
+      ref={areaRef}
+      className="weekarea"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => { swipe.current.tracking = false; }}
+      onClickCapture={onClickCapture}
+    >
+      {/* Oberer Teil bleibt beim Scrollen stehen, die Karten laufen darunter durch */}
+      <div className="sticky-top">
+        <header className="head" role="button" tabIndex={0} aria-label="Back to current week" onClick={onToday} onKeyDown={onHeadKey}>
+          <p className="day">{WEEKDAYS_EN[today.getDay()]}</p>
+          <h1 className="date">{pad(today.getDate())}. {MONTHS_EN[today.getMonth()]}</h1>
+        </header>
 
-      <div
-        ref={areaRef}
-        className="weekarea"
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => { swipe.current.tracking = false; }}
-        onClickCapture={onClickCapture}
-      >
-        <div className="nav">
+        <div className="nav" data-slide>
           <button type="button" aria-label="Previous week" onClick={() => onChangeWeek(-1)}>‹</button>
           <span className="label">Week {isoWeek(week[0])}</span>
           <button type="button" aria-label="Next week" onClick={() => onChangeWeek(1)}>›</button>
         </div>
 
-        <div className="week" aria-hidden="true">
+        <div className="week" aria-hidden="true" data-slide>
           {week.map((d, i) => (
             <span key={i} className={keyOf(d) === todayKey ? 'today' : undefined}>
               <b>{pad(d.getDate())}</b>
@@ -94,13 +97,13 @@ export function CalendarView({ habits, today, weekOffset, slide, onChangeWeek, o
             </span>
           ))}
         </div>
-
-        <ul className="list">
-          {habits.map((h) => (
-            <HabitCard key={h.id} habit={h} week={week} today={today} onToggle={onToggle} />
-          ))}
-        </ul>
       </div>
+
+      <ul className="list" data-slide>
+        {habits.map((h) => (
+          <HabitCard key={h.id} habit={h} week={week} today={today} onToggle={onToggle} />
+        ))}
+      </ul>
     </div>
   );
 }

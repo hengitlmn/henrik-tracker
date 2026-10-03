@@ -65,7 +65,8 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   (M T W T F S S). Jede Gewohnheit ist eine abgerundete Karte (`--bar`) mit Name links, Streak als Pille rechts und 7 Kreisen
   (Montag bis Sonntag), gleiche Innenabstände wie die Wochenzeile, damit alles im Raster bleibt. Vergangene Tage nachtragbar, zukünftige Tage
   gesperrt, aber man kann mit ‹ › beliebig weit in zukünftige Wochen blättern. Tipp auf das Datum oben
-  springt zurück zur aktuellen Woche. Im ganzen Wochenbereich (leicht breiter als die Seite) wechselt
+  springt zurück zur aktuellen Woche. Tag, Datum und Wochenzeile sind beim Scrollen fest (`position: sticky`),
+  die Gewohnheits-Karten laufen darunter durch (weicher Ausblendverlauf). Im ganzen Wochenbereich (leicht breiter als die Seite) wechselt
   Wischen nach links/rechts die Woche. Die Pfeile ‹ › stehen mittig über Montag und Sonntag (7-Spalten-Raster). Streak = Tage in Folge bis heute (oder bis gestern).
 - Untere Tab-Leiste mit fünf Tabs, schwebende abgerundete Kapsel im Liquid-Glass-Stil (durchscheinend mit `backdrop-filter`, feiner Rand, Schatten, Inhalt scheint weichgezeichnet durch) am unteren Rand (mit Safe-Area-Abstand für das
   iPhone, bewusst tief), aktiver Tab mit runder Hinterlegung, die beim Wechsel gleitet. Ein einfacher Tipp lässt sie schneller
