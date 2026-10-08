@@ -177,12 +177,12 @@ export function EntryForm({ money, update, today, accountId, editing, onSaved, o
       <div className="formbtns">
         <button type="button" className={'btn save save-' + type} disabled={!valid} onClick={() => save(false)}>Save</button>
         {!editing && <button type="button" className="btn" disabled={!valid} onClick={() => save(true)}>Continue</button>}
+        {editing && (
+          <button type="button" className={'btn delete-entry' + (armed ? ' armed' : '')} aria-label={armed ? undefined : 'Delete entry'} onClick={remove}>
+            {armed ? 'Sure?' : 'Delete'}
+          </button>
+        )}
       </div>
-      {editing && (
-        <button type="button" className={'remove delete-entry' + (armed ? ' armed' : '')} onClick={remove}>
-          {armed ? 'Sure?' : 'Delete entry'}
-        </button>
-      )}
       <p className="msg" role="status">{msg}</p>
 
       {panel && type !== 'transfer' && (

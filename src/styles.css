@@ -300,7 +300,8 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .formbtns .save-income { background: var(--accent); }
 .formbtns .save-expense { background: var(--expense); }
 .formbtns .save-transfer { background: var(--ink); color: var(--bg); }
-.delete-entry { display: block; margin: 14px auto 0; padding: 8px; }
+.formbtns .delete-entry { background: none; color: var(--muted); }
+.formbtns .delete-entry.armed { color: var(--ink); border-color: var(--ink); }
 .catpanel { margin-top: 16px; background: var(--bar); border-radius: 24px; overflow: hidden; }
 .cathead { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: var(--bar-active); font-weight: 600; }
 .catadd { display: flex; gap: 12px; padding: 12px 20px 0; align-items: center; }
