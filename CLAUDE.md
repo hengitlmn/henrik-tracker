@@ -84,8 +84,9 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   - von links nach rechts: To-do (Haken im Quadrat), Money (Münze mit $), Kalender (Mitte, beim Start aktiv,
     Icon ist ein H im Stil des App-Logos), Gym (Hantel), Notes (Notizblatt)
   - Money, Gym und Notes sind bewusst noch leer (für spätere Features)
-  - Settings ist kein Tab mehr: Lange auf die Leiste drücken (500 ms) lässt sie kurz rütteln (plus `navigator.vibrate`,
-    das iOS nicht kennt) und blendet darüber ein kleines Glas-Menü "Settings" ein. Tipp darauf öffnet die Settings
+  - Settings ist kein Tab mehr: Lange auf die Leiste drücken (500 ms). Die Leiste gibt kurz nach (`squish`) und spuckt
+    wie ein Wassertropfen ein kleines Glas-Menü "Settings" nach oben aus (Dehnen/Stauchen, kleiner Tropfen darunter,
+    bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings
     als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp auf den abgedunkelten Hintergrund).
     Langes Drücken wählt keinen Tab; Ziehen über die Leiste bricht es ab.
   - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers): fester Kopf "Today" plus Datum (`Sat 3. Oct`),

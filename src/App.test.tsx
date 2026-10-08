@@ -102,7 +102,7 @@ describe('Einstellungen', () => {
     act(() => { vi.advanceTimersByTime(300); });
     expect(screen.queryByRole('menuitem')).toBeNull(); // noch zu kurz
     act(() => { vi.advanceTimersByTime(300); });
-    expect(bar().classList.contains('buzz')).toBe(true); // kurzes Rütteln
+    expect(bar().classList.contains('squish')).toBe(true); // Leiste gibt kurz nach
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toBeTruthy();
     fireEvent.pointerUp(bar(), { clientX: 280, pointerId: 1 });
     vi.useRealTimers();

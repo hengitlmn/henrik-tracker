@@ -78,8 +78,8 @@ interface Props {
 /**
  * Schwebende Tab-Leiste mit gleitender Hinterlegung.
  * Tipp: Hinterlegung gleitet schnell zum Tab. Ziehen (ab 6 px): Hinterlegung folgt dem Finger,
- * Loslassen wählt den Tab darunter. Langes Drücken: kurzes Rütteln (plus Vibration, wo möglich)
- * und ein kleines Menü "Settings" über der Leiste.
+ * Loslassen wählt den Tab darunter. Langes Drücken: die Leiste gibt kurz nach und spuckt
+ * wie ein Wassertropfen ein kleines Menü "Settings" nach oben aus.
  */
 export function TabBar({ current, onSelect, onOpenSettings }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
@@ -90,10 +90,10 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
   const fastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const gesture = useRef({ down: false, dragging: false, startX: 0, hover: -1 });
   const pressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const buzzTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const squishTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const longPressed = useRef(false);
   const [menu, setMenu] = useState(false);
-  const [buzz, setBuzz] = useState(false);
+  const [squish, setSquish] = useState(false);
   const [hover, setHover] = useState(-1);
   const [dragging, setDragging] = useState(false);
 
@@ -129,7 +129,7 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
       window.removeEventListener('resize', onResize);
       clearTimeout(fastTimer.current);
       clearTimeout(pressTimer.current);
-      clearTimeout(buzzTimer.current);
+      clearTimeout(squishTimer.current);
     };
   }, [placePill]);
 
@@ -167,10 +167,9 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
     pressTimer.current = setTimeout(() => {
       if (!gesture.current.down || gesture.current.dragging) return;
       longPressed.current = true;
-      try { navigator.vibrate?.(18); } catch { /* iOS kennt keine Vibration */ }
-      setBuzz(true);
-      clearTimeout(buzzTimer.current);
-      buzzTimer.current = setTimeout(() => setBuzz(false), 320);
+      setSquish(true);
+      clearTimeout(squishTimer.current);
+      squishTimer.current = setTimeout(() => setSquish(false), 520);
       setMenu(true);
     }, LONG_PRESS_MS);
     try { innerRef.current?.setPointerCapture(e.pointerId); } catch { /* nicht überall verfügbar */ }
@@ -226,7 +225,7 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
     <nav className="tabbar" aria-label="Main navigation">
       <div
         ref={innerRef}
-        className={'tabbar-inner' + (dragging ? ' dragging' : '') + (buzz ? ' buzz' : '')}
+        className={'tabbar-inner' + (dragging ? ' dragging' : '') + (squish ? ' squish' : '')}
         role="tablist"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
