@@ -533,7 +533,7 @@ describe('Money', () => {
     setupAccounts();
     closeSettings();
     fireEvent.click(tab('Money'));
-    expect(document.querySelector('.totals')!.textContent).toMatch(/Net100,50.*Last day\+?0,00.*Saved–/);
+    expect(document.querySelector('.totals')!.textContent).toMatch(/Networth100,50.*Income · Day0,00.*Expense · Day0,00/);
     expect(document.querySelector('.grouphead')!.textContent).toMatch(/Cash.*€ 100,50/);
     fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
     expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
@@ -756,7 +756,7 @@ describe('Money', () => {
     expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toEqual([]);
   });
 
-  it('Kontenübersicht: Total links, Zeitraum rechts wechselt per Tipp und rechnet + und − zusammen', () => {
+  it('Kontenübersicht: Networth links, Income und Expense wechseln gemeinsam den Zeitraum', () => {
     const d = (n: number) => { const x = new Date(); x.setDate(x.getDate() - n); return keyOf(x); };
     localStorage.setItem('money-v1', JSON.stringify({
       groups: [{ id: 'g', name: 'G' }],
@@ -771,18 +771,21 @@ describe('Money', () => {
     }));
     render(<App />);
     fireEvent.click(tab('Money'));
-    const per = () => document.querySelector('.totals .per')!;
-    expect(document.querySelector('.totals .tot')!.textContent).toMatch(/^Net/);
-    expect(document.querySelector('.totals .saved')!.textContent).toBe('Saved75%'); // 100 Einnahmen, 25 Ausgaben heute
-    expect(per().textContent).toBe('Last day+75,00');
-    const labels = [per().textContent];
-    for (let i = 0; i < 4; i++) { fireEvent.click(per()); labels.push(per().textContent); }
-    expect(labels).toEqual(['Last day+75,00', 'Last week+65,00', 'Last month+565,00', expect.stringMatching(/^Year to date/), expect.stringMatching(/^Last year/)]);
-    fireEvent.click(per());
-    expect(per().textContent).toBe('Last day+75,00'); // zurück zum Anfang
-    fireEvent.click(per()); // Last week: 100 + 0 Einnahmen, 35 Ausgaben
-    expect(document.querySelector('.totals .saved')!.textContent).toBe('Saved65%');
-    fireEvent.click(per());
-    expect(document.querySelector('.totals')!.textContent).not.toMatch(/Assets|Liabilities/);
+    expect(document.querySelector('h1')).toBeNull(); // keine Überschrift "Accounts" mehr
+    const cells = () => [...document.querySelectorAll('.totals .tot')].map((c) => c.textContent);
+    expect(cells()).toEqual(['Networth525,00', 'Income · Day+100,00', 'Expense · Day-25,00']);
+    // Tipp auf Income schaltet beide weiter
+    fireEvent.click(document.querySelectorAll('.totals .per')[0]);
+    expect(cells().slice(1)).toEqual(['Income · Week+100,00', 'Expense · Week-35,00']);
+    // Tipp auf Expense schaltet ebenfalls beide weiter
+    fireEvent.click(document.querySelectorAll('.totals .per')[1]);
+    expect(cells().slice(1)).toEqual(['Income · Month+600,00', 'Expense · Month-35,00']);
+    fireEvent.click(document.querySelectorAll('.totals .per')[1]);
+    expect(cells()[1]).toMatch(/^Income · YTD/);
+    fireEvent.click(document.querySelectorAll('.totals .per')[0]);
+    expect(cells()[2]).toMatch(/^Expense · Year/);
+    fireEvent.click(document.querySelectorAll('.totals .per')[0]);
+    expect(cells().slice(1)).toEqual(['Income · Day+100,00', 'Expense · Day-25,00']); // zurück zum Anfang
+    expect(document.querySelector('.totals')!.textContent).not.toMatch(/Assets|Liabilities|Saved/);
   });
 });

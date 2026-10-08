@@ -86,11 +86,11 @@ export type Period = 'day' | 'week' | 'month' | 'ytd' | 'year';
 
 /** Reihenfolge beim Antippen in der Kontenübersicht */
 export const PERIODS: { id: Period; label: string }[] = [
-  { id: 'day', label: 'Last day' },
-  { id: 'week', label: 'Last week' },
-  { id: 'month', label: 'Last month' },
-  { id: 'ytd', label: 'Year to date' },
-  { id: 'year', label: 'Last year' },
+  { id: 'day', label: 'Day' },
+  { id: 'week', label: 'Week' },
+  { id: 'month', label: 'Month' },
+  { id: 'ytd', label: 'YTD' },
+  { id: 'year', label: 'Year' },
 ];
 
 /** Erster Tag des Zeitraums (inklusive); gerechnet wird rückwärts ab heute: 1, 7, 30 oder 365 Tage, bzw. seit 1. Januar */
@@ -105,15 +105,4 @@ export function flowSince(m: Money, period: Period, today: Date): { income: numb
   const from = periodStart(period, today);
   const to = keyOf(today);
   return incomeExpense(m.entries.filter((e) => e.date >= from && e.date <= to));
-}
-
-/** Summe aller Einnahmen (+) und Ausgaben (−) im Zeitraum */
-export function netSince(m: Money, period: Period, today: Date): number {
-  const { income, expense } = flowSince(m, period, today);
-  return income - expense;
-}
-
-/** Sparquote in ganzen Prozent (Einnahmen minus Ausgaben im Verhältnis zu den Einnahmen); null ohne Einnahmen */
-export function savedPercent(income: number, expense: number): number | null {
-  return income > 0 ? Math.round(((income - expense) / income) * 100) : null;
 }

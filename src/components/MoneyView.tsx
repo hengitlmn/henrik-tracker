@@ -5,7 +5,7 @@ import type { Money, MoneyEntry, MoneySection } from '../types';
 import { parseKey } from '../lib/dates';
 import { useMonthPager } from '../hooks';
 import type { Month } from '../hooks';
-import { PERIODS, flowSince, monthPrefix, savedPercent } from '../lib/stats';
+import { PERIODS, flowSince, monthPrefix } from '../lib/stats';
 import type { Period } from '../lib/stats';
 import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, newestFirst, totals } from '../lib/money';
 import { EntryDays } from './EntryDays';
@@ -96,21 +96,24 @@ function AccountList({ money, today, period, onPeriod, onOpen }: {
 }) {
   const total = totals(money).total;
   const { income, expense } = flowSince(money, period, today);
-  const net = income - expense;
-  const saved = savedPercent(income, expense);
   const idx = PERIODS.findIndex((p) => p.id === period);
   const next = PERIODS[(idx + 1) % PERIODS.length];
+  const cycle = () => onPeriod(next.id);
+  const label = PERIODS[idx].label;
   return (
     <>
       <div className="sticky-top">
-        <h1 className="page-title">Accounts</h1>
         <div className="totals">
-          <span className="tot">Net<b className={tone(total)}>{formatNumber(total)}</b></span>
-          <button type="button" className="tot per" aria-label={PERIODS[idx].label + ', tap for ' + next.label} onClick={() => onPeriod(next.id)}>
-            {PERIODS[idx].label}
-            <b className={tone(net)}>{(net > 0 ? '+' : '') + formatNumber(net)}</b>
+          <span className="tot">Networth<b className={tone(total)}>{formatNumber(total)}</b></span>
+          {/* Income und Expense gehören zusammen: ein Tipp auf eine der beiden schaltet beide um */}
+          <button type="button" className="tot per" aria-label={'Income, ' + label + ', tap for ' + next.label} onClick={cycle}>
+            Income · {label}
+            <b className="pos">{income > 0 ? '+' : ''}{formatNumber(income)}</b>
           </button>
-          <span className="tot saved">Saved<b className={saved === null ? 'muted' : saved < 0 ? 'neg' : 'pos'}>{saved === null ? '–' : saved + '%'}</b></span>
+          <button type="button" className="tot per" aria-label={'Expense, ' + label + ', tap for ' + next.label} onClick={cycle}>
+            Expense · {label}
+            <b className="neg">{expense > 0 ? '-' : ''}{formatNumber(expense)}</b>
+          </button>
         </div>
       </div>
       {money.groups.length === 0 && (
