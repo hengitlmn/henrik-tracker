@@ -5,7 +5,8 @@ import type { Money, MoneyEntry, MoneySection } from '../types';
 import { parseKey } from '../lib/dates';
 import { useMonthPager } from '../hooks';
 import type { Month } from '../hooks';
-import { monthPrefix } from '../lib/stats';
+import { PERIODS, monthPrefix, netSince } from '../lib/stats';
+import type { Period } from '../lib/stats';
 import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, newestFirst, totals } from '../lib/money';
 import { EntryDays } from './EntryDays';
 import { EntryForm } from './EntryForm';
@@ -34,6 +35,7 @@ const tone = (cents: number) => (cents < 0 ? 'neg' : 'pos');
 export function MoneyView({ money, update, today, section, sectionAnim }: Props) {
   const [view, setView] = useState<View>({ kind: 'list' });
   const [dx, setDx] = useState(0);
+  const [period, setPeriod] = useState<Period>('day');
   const [month, setMonth] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }));
 
   const go = (next: View, dir: 1 | -1) => {
@@ -58,7 +60,7 @@ export function MoneyView({ money, update, today, section, sectionAnim }: Props)
 
   return (
     <div key={key} className={dx || sectionAnim ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
-      {view.kind === 'list' && <AccountList money={money} onOpen={(id) => go({ kind: 'account', id }, 1)} />}
+      {view.kind === 'list' && <AccountList money={money} today={today} period={period} onPeriod={setPeriod} onOpen={(id) => go({ kind: 'account', id }, 1)} />}
       {view.kind === 'account' && (
         <AccountPage
           money={money}
@@ -85,16 +87,27 @@ export function MoneyView({ money, update, today, section, sectionAnim }: Props)
   );
 }
 
-function AccountList({ money, onOpen }: { money: Money; onOpen: (id: string) => void }) {
-  const t = totals(money);
+function AccountList({ money, today, period, onPeriod, onOpen }: {
+  money: Money;
+  today: Date;
+  period: Period;
+  onPeriod: (p: Period) => void;
+  onOpen: (id: string) => void;
+}) {
+  const total = totals(money).total;
+  const net = netSince(money, period, today);
+  const idx = PERIODS.findIndex((p) => p.id === period);
+  const next = PERIODS[(idx + 1) % PERIODS.length];
   return (
     <>
       <div className="sticky-top">
         <h1 className="page-title">Accounts</h1>
         <div className="totals">
-          <span>Assets<b className="pos">{formatNumber(t.assets)}</b></span>
-          <span>Liabilities<b className="neg">{formatNumber(t.liabilities)}</b></span>
-          <span>Total<b>{formatNumber(t.total)}</b></span>
+          <span className="tot">Total<b className={tone(total)}>{formatNumber(total)}</b></span>
+          <button type="button" className="tot per" aria-label={PERIODS[idx].label + ', tap for ' + next.label} onClick={() => onPeriod(next.id)}>
+            {PERIODS[idx].label}
+            <b className={tone(net)}>{(net > 0 ? '+' : '') + formatNumber(net)}</b>
+          </button>
         </div>
       </div>
       {money.groups.length === 0 && (

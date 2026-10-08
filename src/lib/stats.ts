@@ -1,5 +1,5 @@
 import type { Money, MoneyEntry } from '../types';
-import { MONTHS_EN, WEEKDAYS_EN, WEEKDAYS_SHORT, pad, parseKey } from './dates';
+import { MONTHS_EN, WEEKDAYS_EN, WEEKDAYS_SHORT, addDays, keyOf, pad, parseKey } from './dates';
 import { formatNumber, typeLabel } from './money';
 
 export const NO_CATEGORY = 'no category';
@@ -80,4 +80,30 @@ export function matchesQuery(e: MoneyEntry, m: Money, query: string): boolean {
   if (!tokens.length) return true;
   const hay = haystack(e, m);
   return tokens.every((t) => hay.includes(t));
+}
+
+export type Period = 'day' | 'week' | 'month' | 'ytd' | 'year';
+
+/** Reihenfolge beim Antippen in der Kontenübersicht */
+export const PERIODS: { id: Period; label: string }[] = [
+  { id: 'day', label: 'Last day' },
+  { id: 'week', label: 'Last week' },
+  { id: 'month', label: 'Last month' },
+  { id: 'ytd', label: 'Year to date' },
+  { id: 'year', label: 'Last year' },
+];
+
+/** Erster Tag des Zeitraums (inklusive); gerechnet wird rückwärts ab heute: 1, 7, 30 oder 365 Tage, bzw. seit 1. Januar */
+export function periodStart(period: Period, today: Date): string {
+  if (period === 'ytd') return today.getFullYear() + '-01-01';
+  const days = { day: 1, week: 7, month: 30, year: 365 }[period];
+  return keyOf(addDays(today, -(days - 1)));
+}
+
+/** Summe aller Einnahmen (+) und Ausgaben (−) im Zeitraum; Überweisungen zählen nicht */
+export function netSince(m: Money, period: Period, today: Date): number {
+  const from = periodStart(period, today);
+  const to = keyOf(today);
+  const { income, expense } = incomeExpense(m.entries.filter((e) => e.date >= from && e.date <= to));
+  return income - expense;
 }

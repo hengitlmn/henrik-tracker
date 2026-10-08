@@ -533,7 +533,7 @@ describe('Money', () => {
     setupAccounts();
     closeSettings();
     fireEvent.click(tab('Money'));
-    expect(document.querySelector('.totals')!.textContent).toMatch(/100,50.*0,00.*100,50/);
+    expect(document.querySelector('.totals')!.textContent).toMatch(/Total100,50.*Last day\+?0,00/);
     expect(document.querySelector('.grouphead')!.textContent).toMatch(/Cash.*€ 100,50/);
     fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
     expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
@@ -754,5 +754,31 @@ describe('Money', () => {
     expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toHaveLength(1);
     fireEvent.click(screen.getByLabelText('Remove budget food'));
     expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toEqual([]);
+  });
+
+  it('Kontenübersicht: Total links, Zeitraum rechts wechselt per Tipp und rechnet + und − zusammen', () => {
+    const d = (n: number) => { const x = new Date(); x.setDate(x.getDate() - n); return keyOf(x); };
+    localStorage.setItem('money-v1', JSON.stringify({
+      groups: [{ id: 'g', name: 'G' }],
+      accounts: [{ id: 'a', groupId: 'g', name: 'Wallet', start: 0 }],
+      entries: [
+        { id: '1', type: 'income', date: d(0), accountId: 'a', amount: 10000 },
+        { id: '2', type: 'expense', date: d(0), accountId: 'a', amount: 2500 },
+        { id: '3', type: 'expense', date: d(3), accountId: 'a', amount: 1000 },
+        { id: '4', type: 'income', date: d(20), accountId: 'a', amount: 50000 },
+        { id: '5', type: 'expense', date: d(200), accountId: 'a', amount: 4000 },
+      ],
+    }));
+    render(<App />);
+    fireEvent.click(tab('Money'));
+    const per = () => document.querySelector('.totals .per')!;
+    expect(document.querySelector('.totals .tot')!.textContent).toMatch(/^Total/);
+    expect(per().textContent).toBe('Last day+75,00');
+    const labels = [per().textContent];
+    for (let i = 0; i < 4; i++) { fireEvent.click(per()); labels.push(per().textContent); }
+    expect(labels).toEqual(['Last day+75,00', 'Last week+65,00', 'Last month+565,00', expect.stringMatching(/^Year to date/), expect.stringMatching(/^Last year/)]);
+    fireEvent.click(per());
+    expect(per().textContent).toBe('Last day+75,00'); // zurück zum Anfang
+    expect(document.querySelector('.totals')!.textContent).not.toMatch(/Assets|Liabilities/);
   });
 });
