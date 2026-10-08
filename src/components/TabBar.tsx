@@ -8,7 +8,7 @@ const PAD = 6;
 const GAP = 4;
 const COUNT = TAB_ORDER.length;
 /** So lange gedrückt halten, bis das Settings-Menü erscheint */
-export const LONG_PRESS_MS = 500;
+export const LONG_PRESS_MS = 350;
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -169,7 +169,7 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
       longPressed.current = true;
       setSquish(true);
       clearTimeout(squishTimer.current);
-      squishTimer.current = setTimeout(() => setSquish(false), 520);
+      squishTimer.current = setTimeout(() => setSquish(false), 360);
       setMenu(true);
     }, LONG_PRESS_MS);
     try { innerRef.current?.setPointerCapture(e.pointerId); } catch { /* nicht überall verfügbar */ }
