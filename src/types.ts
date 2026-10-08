@@ -14,6 +14,8 @@ export interface Todo {
   completedAt?: string;
 }
 
+export type MoneySection = 'accounts' | 'stats' | 'calendar';
+
 export type Tab = 'todo' | 'money' | 'cal' | 'gym' | 'notes';
 
 /** Money: alle Beträge in Cent (ganze Zahlen) */

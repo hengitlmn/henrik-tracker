@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EntryType, Money, MoneyEntry } from '../types';
-import { keyOf } from '../lib/dates';
+import { WEEKDAYS_SHORT, keyOf, parseKey } from '../lib/dates';
 import { newId } from '../lib/id';
 import { parseAmount, typeLabel } from '../lib/money';
 
@@ -18,6 +18,13 @@ const SVG = {
   viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
   strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
 } as const;
+
+/** "2026-10-08" -> "Thu 8.10.2026" */
+function dateLabel(key: string): string {
+  if (!key) return 'Choose';
+  const d = parseKey(key);
+  return WEEKDAYS_SHORT[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear();
+}
 
 const TYPES: EntryType[] = ['income', 'expense', 'transfer'];
 
@@ -100,9 +107,7 @@ export function EntryForm({ money, update, today, accountId, editing, onSaved, o
   };
 
   const accountOptions = money.accounts.map((a) => (
-    <option key={a.id} value={a.id}>
-      {money.groups.find((g) => g.id === a.groupId)?.name} · {a.name}
-    </option>
+    <option key={a.id} value={a.id}>{a.name}</option>
   ));
 
   return (
@@ -125,8 +130,10 @@ export function EntryForm({ money, update, today, accountId, editing, onSaved, o
       </div>
 
       <div className="formcard">
-        <label className="field">
+        <label className="field datefield">
           <span>Date</span>
+          <em>{dateLabel(date)}</em>
+          {/* unsichtbares Datumsfeld über dem Text: öffnet die Datumsauswahl, der Text steht links wie bei den anderen Feldern */}
           <input type="date" aria-label="Date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="field">

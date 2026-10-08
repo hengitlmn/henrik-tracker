@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
-import type { Tab } from '../types';
+import type { MoneySection, Tab } from '../types';
 
 export const TAB_ORDER: Tab[] = ['todo', 'money', 'cal', 'gym', 'notes'];
 
@@ -9,6 +9,7 @@ const GAP = 4;
 const COUNT = TAB_ORDER.length;
 /** So lange gedrückt halten, bis das Settings-Menü erscheint */
 export const LONG_PRESS_MS = 350;
+const DOUBLE_TAP_MS = 350;
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -67,12 +68,48 @@ const ICONS: Record<Tab, { label: string; icon: ReactNode }> = {
   },
 };
 
+const MONEY_SECTIONS: { id: MoneySection; label: string; icon: ReactNode }[] = [
+  {
+    id: 'accounts',
+    label: 'Accounts',
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M14.6 9.4c-.5-1-1.5-1.5-2.6-1.5-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2.1 2.6.9 2.6 2.1-1.1 2-2.6 2c-1.1 0-2.1-.5-2.6-1.5" />
+        <path d="M12 6.4v1.5M12 16.1v1.5" />
+      </>
+    ),
+  },
+  {
+    id: 'stats',
+    label: 'Stats',
+    icon: (
+      <>
+        <path d="M3.5 16.5l5.5-5.5 4 4 7-8" />
+        <path d="M15.5 7h5v5" />
+      </>
+    ),
+  },
+  {
+    id: 'calendar',
+    label: 'Calendar',
+    icon: (
+      <>
+        <rect x="4" y="5.5" width="16" height="14.5" rx="2.5" />
+        <path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" />
+      </>
+    ),
+  },
+];
+
 const GEAR = 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z';
 
 interface Props {
   current: Tab;
   onSelect: (tab: Tab) => void;
   onOpenSettings: () => void;
+  moneySection: MoneySection;
+  onMoneySection: (section: MoneySection) => void;
 }
 
 /**
@@ -81,7 +118,7 @@ interface Props {
  * Loslassen wählt den Tab darunter. Langes Drücken: die Leiste gibt kurz nach und spuckt
  * wie ein Wassertropfen ein kleines Menü "Settings" nach oben aus.
  */
-export function TabBar({ current, onSelect, onOpenSettings }: Props) {
+export function TabBar({ current, onSelect, onOpenSettings, moneySection, onMoneySection }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef(current);
@@ -92,7 +129,8 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
   const pressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const squishTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const longPressed = useRef(false);
-  const [menu, setMenu] = useState(false);
+  const [menu, setMenu] = useState<null | 'settings' | 'money'>(null);
+  const lastTap = useRef({ idx: -1, t: 0 });
   const [squish, setSquish] = useState(false);
   const [hover, setHover] = useState(-1);
   const [dragging, setDragging] = useState(false);
@@ -159,7 +197,7 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
 
   const onPointerDown = (e: PointerEvent) => {
     if (e.button) return;
-    setMenu(false);
+    setMenu(null);
     longPressed.current = false;
     gesture.current.down = true;
     gesture.current.startX = e.clientX;
@@ -170,7 +208,7 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
       setSquish(true);
       clearTimeout(squishTimer.current);
       squishTimer.current = setTimeout(() => setSquish(false), 360);
-      setMenu(true);
+      setMenu('settings');
     }, LONG_PRESS_MS);
     try { innerRef.current?.setPointerCapture(e.pointerId); } catch { /* nicht überall verfügbar */ }
   };
@@ -210,7 +248,17 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
         clearTimeout(fastTimer.current);
         fastTimer.current = setTimeout(() => pill.classList.remove('fast'), 350);
       }
-      const target = TAB_ORDER[indexAt(e.clientX)];
+      const idx = indexAt(e.clientX);
+      const target = TAB_ORDER[idx];
+      const now = Date.now();
+      const last = lastTap.current;
+      lastTap.current = { idx, t: now };
+      if (target === 'money' && last.idx === idx && now - last.t < DOUBLE_TAP_MS) {
+        lastTap.current = { idx: -1, t: 0 };
+        onSelect(target);
+        setMenu('money'); // Doppeltipp auf Money: Auswahl Accounts / Stats / Calendar
+        return;
+      }
       if (target !== currentRef.current) onSelect(target);
     }
   };
@@ -249,19 +297,37 @@ export function TabBar({ current, onSelect, onOpenSettings }: Props) {
       </div>
       {menu && (
         <>
-          <div className="tabmenu-backdrop" onPointerDown={() => setMenu(false)} />
-          <div className="tabmenu" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { setMenu(false); onOpenSettings(); }}
-            >
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d={GEAR} />
-              </svg>
-              Settings
-            </button>
+          <div className="tabmenu-backdrop" onPointerDown={() => setMenu(null)} />
+          <div className="tabmenu-anchor">
+            {menu === 'settings' && (
+              <div className="tabmenu" role="menu">
+                <button type="button" role="menuitem" onClick={() => { setMenu(null); onOpenSettings(); }}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d={GEAR} />
+                  </svg>
+                  Settings
+                </button>
+              </div>
+            )}
+            {menu === 'money' && (
+              <div className="tabmenu moneymenu" role="menu" aria-label="Money">
+                {MONEY_SECTIONS.map((sec) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={moneySection === sec.id}
+                    onClick={() => { setMenu(null); onMoneySection(sec.id); }}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      {sec.icon}
+                    </svg>
+                    {sec.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

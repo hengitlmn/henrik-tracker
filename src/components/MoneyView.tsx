@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import type { CSSProperties } from 'react';
-import type { Money, MoneyEntry } from '../types';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import type { CSSProperties, MouseEvent, PointerEvent } from 'react';
+import type { Money, MoneyEntry, MoneySection } from '../types';
 import { MONTHS_EN, WEEKDAYS_SHORT, pad, parseKey } from '../lib/dates';
 import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, totals } from '../lib/money';
 import { EntryForm } from './EntryForm';
@@ -9,6 +10,9 @@ interface Props {
   money: Money;
   update: (fn: (current: Money) => Money) => void;
   today: Date;
+  section: MoneySection;
+  /** zählt hoch, wenn der Bereich gewechselt wurde (für die Einblend-Animation) */
+  sectionAnim: number;
 }
 
 type View = { kind: 'list' } | { kind: 'account'; id: string } | { kind: 'entry'; accountId: string; editId?: string };
@@ -20,7 +24,7 @@ const SVG = {
 
 const tone = (cents: number) => (cents < 0 ? 'neg' : 'pos');
 
-export function MoneyView({ money, update, today }: Props) {
+export function MoneyView({ money, update, today, section, sectionAnim }: Props) {
   const [view, setView] = useState<View>({ kind: 'list' });
   const [dx, setDx] = useState(0);
   const [month, setMonth] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }));
@@ -31,10 +35,22 @@ export function MoneyView({ money, update, today }: Props) {
     window.scrollTo(0, 0);
   };
 
+  if (section !== 'accounts') {
+    // Stats und Calendar: bewusst noch leer, nur die Überschrift steht schon oben
+    const title = section === 'stats' ? 'Stats' : 'Calendar';
+    return (
+      <div key={section} className="view-in" style={{ '--dx': '28px' } as CSSProperties} data-money={section}>
+        <div className="sticky-top">
+          <h1 className="page-title">{title}</h1>
+        </div>
+      </div>
+    );
+  }
+
   const key = view.kind + ('id' in view ? view.id : '') + ('accountId' in view ? view.accountId + (view.editId ?? '') : '');
 
   return (
-    <div key={key} className={dx ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
+    <div key={key} className={dx || sectionAnim ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
       {view.kind === 'list' && <AccountList money={money} onOpen={(id) => go({ kind: 'account', id }, 1)} />}
       {view.kind === 'account' && (
         <AccountPage
@@ -113,8 +129,9 @@ interface AccountPageProps {
 }
 
 function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit }: AccountPageProps) {
+  const areaRef = useRef<HTMLDivElement>(null);
+  const [slide, setSlide] = useState({ n: 0, dir: 0 });
   const account = money.accounts.find((a) => a.id === accountId);
-  if (!account) return null;
   const name = (id?: string) => money.accounts.find((a) => a.id === id)?.name ?? '?';
   const prefix = month.y + '-' + pad(month.m + 1);
   const inMonth = money.entries
@@ -136,7 +153,49 @@ function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit 
   const shift = (delta: number) => {
     const d = new Date(month.y, month.m + delta, 1);
     setMonth({ y: d.getFullYear(), m: d.getMonth() });
+    setSlide((s) => ({ n: s.n + 1, dir: delta > 0 ? 1 : -1 }));
   };
+
+  // neuer Monat gleitet von der Seite herein
+  useLayoutEffect(() => {
+    const root = areaRef.current;
+    if (!root || !slide.n) return;
+    root.querySelectorAll<HTMLElement>('[data-slide]').forEach((el) => {
+      el.style.setProperty('--wdx', slide.dir * 28 + 'px');
+      el.classList.remove('week-in');
+      void el.offsetWidth;
+      el.classList.add('week-in');
+    });
+  }, [slide.n, slide.dir]);
+
+  // Wischen wechselt den Monat (wie die Woche im Kalender)
+  const swipe = useRef({ tracking: false, x: 0, y: 0, swallow: false });
+  const onPointerDown = (e: PointerEvent) => {
+    if (e.button) return;
+    swipe.current.tracking = true;
+    swipe.current.x = e.clientX;
+    swipe.current.y = e.clientY;
+  };
+  const onPointerUp = (e: PointerEvent) => {
+    const s = swipe.current;
+    if (!s.tracking) return;
+    s.tracking = false;
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      s.swallow = true; // das Loslassen soll keinen Eintrag öffnen
+      setTimeout(() => { s.swallow = false; }, 60);
+      shift(dx < 0 ? 1 : -1); // nach links wischen = nächster Monat
+    }
+  };
+  const onClickCapture = (e: MouseEvent) => {
+    if (swipe.current.swallow) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
+  if (!account) return null;
 
   return (
     <>
@@ -149,19 +208,28 @@ function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit 
         <span />
       </div>
 
-      <div className="monthnav">
+      <div
+        ref={areaRef}
+        className="swipearea"
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => { swipe.current.tracking = false; }}
+        onClickCapture={onClickCapture}
+      >
+      <div className="monthnav" data-slide>
         <button type="button" aria-label="Previous month" onClick={() => shift(-1)}>‹</button>
         <span>{MONTHS_EN[month.m].slice(0, 3)} {month.y}</span>
         <button type="button" aria-label="Next month" onClick={() => shift(1)}>›</button>
       </div>
 
-      <div className="sum">
-        <span>Deposit<b className="pos">{formatNumber(deposit)}</b></span>
-        <span>Withdrawal<b className="neg">{formatNumber(withdrawal)}</b></span>
+      <div className="sum" data-slide>
+        <span>Income<b className="pos">{formatNumber(deposit)}</b></span>
+        <span>Expense<b className="neg">{formatNumber(withdrawal)}</b></span>
         <span>Total<b>{formatNumber(deposit - withdrawal)}</b></span>
         <span>Balance<b className="muted">{formatNumber(accountBalance(money, accountId))}</b></span>
       </div>
 
+      <div data-slide>
       {days.map(({ date, entries }) => {
         const d = parseKey(date);
         const inc = entries.reduce((s, e) => s + Math.max(0, entryEffect(e, accountId)), 0);
@@ -194,10 +262,16 @@ function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit 
         );
       })}
       {days.length === 0 && <p className="hint">No entries this month.</p>}
+      </div>
+      </div>
 
-      <button type="button" className="fab" aria-label="Add entry" onClick={onAdd}>
-        <svg {...SVG} width="26" height="26" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
-      </button>
+      {/* über document.body, damit "fixed" nicht an der Einblend-Animation der Ansicht hängt */}
+      {createPortal(
+        <button type="button" className="fab" aria-label="Add entry" onClick={onAdd}>
+          <svg {...SVG} width="26" height="26" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
+        </button>,
+        document.body,
+      )}
     </>
   );
 }

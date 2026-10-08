@@ -550,7 +550,7 @@ describe('Money', () => {
     fireEvent.click(save);
     expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
     expect(document.querySelector('.entry')!.textContent).toMatch(/food.*Lunch.*€ 12,50/);
-    expect(document.querySelector('.sum')!.textContent).toMatch(/Withdrawal12,50/);
+    expect(document.querySelector('.sum')!.textContent).toMatch(/Expense12,50/);
     expect(document.querySelector('.sum')!.textContent).toMatch(/Balance88,00/);
 
     // Einnahme mit "Continue" bleibt im Formular
@@ -616,5 +616,46 @@ describe('Money', () => {
     expect(parseBackup(exportText([], [], money))!.money!.accounts[0].start).toBe(10050);
     expect(parseBackup(JSON.stringify({ habits: [], money: 'kaputt' }))).toBeNull();
     expect(parseBackup(JSON.stringify({ habits: [] }))!.money).toBeNull(); // ältere Sicherung: Money bleibt
+  });
+
+  it('Doppeltipp aufs Money-Icon öffnet die Auswahl Accounts / Stats / Calendar, Stats und Calendar zeigen nur die Überschrift', () => {
+    render(<App />);
+    const tap = (x: number) => {
+      fireEvent.pointerDown(bar(), { clientX: x, pointerId: 1 });
+      fireEvent.pointerUp(bar(), { clientX: x, pointerId: 1 });
+    };
+    tap(100); // Money
+    expect(tab('Money').getAttribute('aria-selected')).toBe('true');
+    expect(screen.queryByRole('menu')).toBeNull();
+    tap(100); // zweiter Tipp
+    const menu = screen.getByRole('menu', { name: 'Money' });
+    expect([...menu.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Accounts', 'Stats', 'Calendar']);
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Stats' }));
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.querySelector('[data-money="stats"] h1')!.textContent).toBe('Stats');
+    tap(100); tap(100);
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Calendar' }));
+    expect(document.querySelector('[data-money="calendar"] h1')!.textContent).toBe('Calendar');
+    tap(100); tap(100);
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Accounts' }));
+    expect(document.querySelector('.totals')).toBeTruthy();
+  });
+
+  it('Wischen auf der Kontoseite wechselt den Monat, Einnahmen heißen Income und Expense', () => {
+    render(<App />);
+    setupAccounts();
+    closeSettings();
+    fireEvent.click(tab('Money'));
+    fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
+    expect(document.querySelector('.sum')!.textContent).toMatch(/^Income.*Expense.*Total.*Balance/);
+    const label = () => document.querySelector('.monthnav span')!.textContent;
+    const start = label();
+    const area = document.querySelector('.swipearea')!;
+    fireEvent.pointerDown(area, { clientX: 250, clientY: 100, pointerId: 2 });
+    fireEvent.pointerUp(area, { clientX: 100, clientY: 105, pointerId: 2 });
+    expect(label()).not.toBe(start);
+    fireEvent.pointerDown(area, { clientX: 100, clientY: 100, pointerId: 2 });
+    fireEvent.pointerUp(area, { clientX: 250, clientY: 98, pointerId: 2 });
+    expect(label()).toBe(start);
   });
 });

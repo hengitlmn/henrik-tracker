@@ -204,10 +204,7 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
   backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, .10);
   border-radius: 999px;
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, .5),
-    0 2px 8px rgba(0, 0, 0, .35),
-    inset 0 1px 0 rgba(255, 255, 255, .14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);   /* kein Schlagschatten, die Leiste schwebt über dem Inhalt */
   touch-action: none; user-select: none; -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
@@ -267,6 +264,7 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .entry .what b { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
 .entry .what i { font-style: normal; font-size: 13px; color: var(--muted); }
 .entry .amt { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.swipearea { touch-action: pan-y; min-height: calc(100vh - 220px); }
 .fab {
   position: fixed; z-index: 8; width: 58px; height: 58px; border-radius: 50%;
   right: max(24px, calc(50% - 216px));
@@ -290,7 +288,8 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
   font: inherit; font-size: 17px; color: var(--ink); background: transparent; border: 0; border-radius: 0; padding: 0;
   min-width: 0; width: 100%; -webkit-appearance: none; appearance: none; text-align: left;
 }
-.field input[type="date"] { min-height: 28px; }
+.datefield { position: relative; }
+.field input[type="date"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
 .field input:focus, .field select:focus { outline: none; }
 .field input::placeholder { color: var(--muted); }
 .field:focus-within { border-bottom-color: var(--ink); }
@@ -324,15 +323,16 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 @keyframes squish { 0% { transform: none; } 35% { transform: scale(1.025, .9); } 70% { transform: scale(.995, 1.03); } 100% { transform: none; } }
 .tabbar-inner.squish { animation: squish .35s cubic-bezier(.32,.72,0,1); transform-origin: 50% 100%; }
 .tabmenu-backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: auto; }
+.tabmenu-anchor { position: absolute; top: 0; left: 16px; right: 16px; max-width: 480px; margin: 0 auto; height: 0; pointer-events: none; }
 .tabmenu {
-  position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
   pointer-events: auto; padding: 5px;
   background: rgba(46, 46, 50, .6);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, .10);
   border-radius: 999px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, .5), 0 2px 8px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
   transform-origin: 50% 100%;
   animation: menuIn .4s cubic-bezier(.3,.7,.3,1) both;
 }
@@ -343,6 +343,9 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
   72%  { transform: translate(-50%, 0) scale(.97, 1.04); }
   100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
+.moneymenu { left: 30%; display: flex; flex-direction: column; border-radius: 26px; }
+.moneymenu button { min-width: 168px; }
+.moneymenu button[aria-checked="true"] { background: rgba(255, 255, 255, .14); }
 .tabmenu button { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 22px 0 18px; border-radius: 999px; font-size: 16px; font-weight: 600; }
 .tabmenu button:active { background: rgba(255, 255, 255, .12); }
 

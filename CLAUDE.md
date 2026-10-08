@@ -81,7 +81,7 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   springt zurück zur aktuellen Woche. Tag, Datum und Wochenzeile sind beim Scrollen fest (`position: sticky`),
   die Gewohnheits-Karten laufen darunter durch (weicher Ausblendverlauf). Im ganzen Wochenbereich (leicht breiter als die Seite) wechselt
   Wischen nach links/rechts die Woche. Die Pfeile ‹ › stehen mittig über Montag und Sonntag (7-Spalten-Raster). Streak = Tage in Folge bis heute (oder bis gestern).
-- Untere Tab-Leiste mit fünf Tabs, schwebende abgerundete Kapsel im Liquid-Glass-Stil (durchscheinend mit `backdrop-filter`, feiner Rand, Schatten, Inhalt scheint weichgezeichnet durch) am unteren Rand (mit Safe-Area-Abstand für das
+- Untere Tab-Leiste mit fünf Tabs, schwebende abgerundete Kapsel im Liquid-Glass-Stil (durchscheinend mit `backdrop-filter`, feiner Rand, bewusst kein Schlagschatten, Inhalt scheint weichgezeichnet durch) am unteren Rand (mit Safe-Area-Abstand für das
   iPhone, bewusst tief), aktiver Tab mit runder Hinterlegung, die beim Wechsel gleitet. Ein einfacher Tipp lässt sie schneller
   rübergleiten. Man kann mit dem Finger über die Leiste ziehen (ab ca. 6 px Bewegung), die Hinterlegung folgt, Loslassen wählt den Tab. Beim Tab-Wechsel blendet die Ansicht
   kurz ein (leichter Schub von der Seite):
@@ -94,7 +94,11 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     Withdrawal / Total / Balance und den Einträgen nach Tagen; Plus-Button unten rechts über der Leiste. Plus öffnet
     das Formular: Income / Expense / Transfer, Date, Account (Transfer: From/To), Category (Auswahl-Raster mit "Add"),
     Amount, Note, "Save" und "Continue" (speichert und bleibt offen). Tipp auf einen Eintrag = ändern/löschen.
-    Noch nicht gebaut: Stats, Budget, Wiederholungen, Fotos, Konten ausblenden/sortieren, Gebühren bei Überweisungen.
+    Monatswechsel auch per Wischen (wie die Woche im Kalender). Plus-Button hängt per Portal an `document.body`
+    (sonst verschiebt die Einblend-Animation der Ansicht das `position: fixed`).
+    Doppeltipp auf das Money-Icon: kleines Glas-Menü über dem Icon mit Accounts / Stats / Calendar (Bereiche innerhalb
+    des Money-Tabs); Stats und Calendar sind noch leer, nur die Überschrift steht oben.
+    Noch nicht gebaut: Stats-Inhalt, Calendar-Inhalt, Budget, Wiederholungen, Fotos, Konten ausblenden/sortieren, Gebühren bei Überweisungen.
   - Settings ist kein Tab mehr: Lange auf die Leiste drücken (350 ms). Die Leiste gibt kurz nach (`squish`) und spuckt
     wie ein Wassertropfen ein kleines Glas-Menü "Settings" nach oben aus (Dehnen/Stauchen, ohne Zusatzblase,
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { Tab } from './types';
+import type { MoneySection, Tab } from './types';
 import { useHabits, useMoney, useToday, useTodos, useWeekNav } from './hooks';
 import { CalendarView } from './components/CalendarView';
 import { SettingsSheet } from './components/SettingsSheet';
@@ -17,6 +17,8 @@ export default function App() {
   const week = useWeekNav();
 
   const [tab, setTab] = useState<Tab>('cal');
+  const [moneySection, setMoneySection] = useState<MoneySection>('accounts');
+  const [sectionAnim, setSectionAnim] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [anim, setAnim] = useState({ n: 0, dx: 0 });
   const tabRef = useRef(tab);
@@ -27,6 +29,13 @@ export default function App() {
     tabRef.current = next;
     setTab(next);
     setAnim((a) => ({ n: a.n + 1, dx }));
+    window.scrollTo(0, 0);
+  };
+
+  const selectMoneySection = (next: MoneySection) => {
+    if (next === moneySection) return;
+    setMoneySection(next);
+    setSectionAnim((n) => n + 1);
     window.scrollTo(0, 0);
   };
 
@@ -52,7 +61,7 @@ export default function App() {
           data-view={tab}
         >
           {/* gym und notes: bewusst noch leer, Platz für spätere Features */}
-          {tab === 'money' && <MoneyView money={money} update={updateMoney} today={today} />}
+          {tab === 'money' && <MoneyView money={money} update={updateMoney} today={today} section={moneySection} sectionAnim={sectionAnim} />}
           {tab === 'todo' && <TodoView todos={todos} today={today} update={updateTodos} />}
           {tab === 'cal' && (
             <CalendarView
@@ -67,7 +76,7 @@ export default function App() {
           )}
         </div>
       </main>
-      <TabBar current={tab} onSelect={selectTab} onOpenSettings={() => setSettingsOpen(true)} />
+      <TabBar current={tab} onSelect={selectTab} onOpenSettings={() => setSettingsOpen(true)} moneySection={moneySection} onMoneySection={selectMoneySection} />
       {settingsOpen && (
         <SettingsSheet onClose={() => setSettingsOpen(false)}>
           <SettingsView habits={habits} update={update} todos={todos} updateTodos={updateTodos} money={money} updateMoney={updateMoney} />
