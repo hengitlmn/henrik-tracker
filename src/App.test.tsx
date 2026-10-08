@@ -533,7 +533,7 @@ describe('Money', () => {
     setupAccounts();
     closeSettings();
     fireEvent.click(tab('Money'));
-    expect(document.querySelector('.totals')!.textContent).toMatch(/Total100,50.*Last day\+?0,00/);
+    expect(document.querySelector('.totals')!.textContent).toMatch(/Net100,50.*Last day\+?0,00.*Saved–/);
     expect(document.querySelector('.grouphead')!.textContent).toMatch(/Cash.*€ 100,50/);
     fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
     expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
@@ -772,13 +772,17 @@ describe('Money', () => {
     render(<App />);
     fireEvent.click(tab('Money'));
     const per = () => document.querySelector('.totals .per')!;
-    expect(document.querySelector('.totals .tot')!.textContent).toMatch(/^Total/);
+    expect(document.querySelector('.totals .tot')!.textContent).toMatch(/^Net/);
+    expect(document.querySelector('.totals .saved')!.textContent).toBe('Saved75%'); // 100 Einnahmen, 25 Ausgaben heute
     expect(per().textContent).toBe('Last day+75,00');
     const labels = [per().textContent];
     for (let i = 0; i < 4; i++) { fireEvent.click(per()); labels.push(per().textContent); }
     expect(labels).toEqual(['Last day+75,00', 'Last week+65,00', 'Last month+565,00', expect.stringMatching(/^Year to date/), expect.stringMatching(/^Last year/)]);
     fireEvent.click(per());
     expect(per().textContent).toBe('Last day+75,00'); // zurück zum Anfang
+    fireEvent.click(per()); // Last week: 100 + 0 Einnahmen, 35 Ausgaben
+    expect(document.querySelector('.totals .saved')!.textContent).toBe('Saved65%');
+    fireEvent.click(per());
     expect(document.querySelector('.totals')!.textContent).not.toMatch(/Assets|Liabilities/);
   });
 });

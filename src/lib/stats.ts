@@ -100,10 +100,20 @@ export function periodStart(period: Period, today: Date): string {
   return keyOf(addDays(today, -(days - 1)));
 }
 
-/** Summe aller Einnahmen (+) und Ausgaben (−) im Zeitraum; Überweisungen zählen nicht */
-export function netSince(m: Money, period: Period, today: Date): number {
+/** Einnahmen und Ausgaben im Zeitraum; Überweisungen zählen nicht */
+export function flowSince(m: Money, period: Period, today: Date): { income: number; expense: number } {
   const from = periodStart(period, today);
   const to = keyOf(today);
-  const { income, expense } = incomeExpense(m.entries.filter((e) => e.date >= from && e.date <= to));
+  return incomeExpense(m.entries.filter((e) => e.date >= from && e.date <= to));
+}
+
+/** Summe aller Einnahmen (+) und Ausgaben (−) im Zeitraum */
+export function netSince(m: Money, period: Period, today: Date): number {
+  const { income, expense } = flowSince(m, period, today);
   return income - expense;
+}
+
+/** Sparquote in ganzen Prozent (Einnahmen minus Ausgaben im Verhältnis zu den Einnahmen); null ohne Einnahmen */
+export function savedPercent(income: number, expense: number): number | null {
+  return income > 0 ? Math.round(((income - expense) / income) * 100) : null;
 }

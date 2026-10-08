@@ -5,7 +5,7 @@ import type { Money, MoneyEntry, MoneySection } from '../types';
 import { parseKey } from '../lib/dates';
 import { useMonthPager } from '../hooks';
 import type { Month } from '../hooks';
-import { PERIODS, monthPrefix, netSince } from '../lib/stats';
+import { PERIODS, flowSince, monthPrefix, savedPercent } from '../lib/stats';
 import type { Period } from '../lib/stats';
 import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, newestFirst, totals } from '../lib/money';
 import { EntryDays } from './EntryDays';
@@ -95,7 +95,9 @@ function AccountList({ money, today, period, onPeriod, onOpen }: {
   onOpen: (id: string) => void;
 }) {
   const total = totals(money).total;
-  const net = netSince(money, period, today);
+  const { income, expense } = flowSince(money, period, today);
+  const net = income - expense;
+  const saved = savedPercent(income, expense);
   const idx = PERIODS.findIndex((p) => p.id === period);
   const next = PERIODS[(idx + 1) % PERIODS.length];
   return (
@@ -103,11 +105,12 @@ function AccountList({ money, today, period, onPeriod, onOpen }: {
       <div className="sticky-top">
         <h1 className="page-title">Accounts</h1>
         <div className="totals">
-          <span className="tot">Total<b className={tone(total)}>{formatNumber(total)}</b></span>
+          <span className="tot">Net<b className={tone(total)}>{formatNumber(total)}</b></span>
           <button type="button" className="tot per" aria-label={PERIODS[idx].label + ', tap for ' + next.label} onClick={() => onPeriod(next.id)}>
             {PERIODS[idx].label}
             <b className={tone(net)}>{(net > 0 ? '+' : '') + formatNumber(net)}</b>
           </button>
+          <span className="tot saved">Saved<b className={saved === null ? 'muted' : saved < 0 ? 'neg' : 'pos'}>{saved === null ? '–' : saved + '%'}</b></span>
         </div>
       </div>
       {money.groups.length === 0 && (

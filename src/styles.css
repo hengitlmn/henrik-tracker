@@ -239,7 +239,7 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .hint { margin: 18px 4px; font-size: 14px; color: var(--muted); text-align: center; }
 .sticky-top .page-title { margin-bottom: 12px; }
 .totals, .sum { display: grid; text-align: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.totals { grid-template-columns: 1fr 1fr; padding: 0 6px 6px; text-align: center; }
+.totals { grid-template-columns: repeat(3, 1fr); padding: 0 6px 6px; text-align: center; }
 .totals .tot { display: block; color: var(--ink); }
 .totals .per { justify-self: stretch; text-align: center; font: inherit; font-size: 13px; font-weight: 600; }
 .totals .per:active { opacity: .6; }

@@ -90,9 +90,9 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     Icon ist ein H im Stil des App-Logos), Gym (Hantel), Notes (Notizblatt)
   - Gym und Notes sind bewusst noch leer (für spätere Features)
   - Money-Tab (Vorbild: Money-Manager-App aus den Screenrecordings des Nutzers): fester Kopf "Accounts" mit
-    "Total" links (weißer Titel, Betrag blau, bei Minus rot) und rechts einem Zeitraum, der pro Tipp wechselt:
+    drei Spalten mittig: "Net" (Gesamtstand aller Konten, weißer Titel, Betrag blau, bei Minus rot), in der Mitte ein Zeitraum, der pro Tipp wechselt:
     Last day (heute) → Last week (7 Tage) → Last month (30 Tage) → Year to date (seit 1.1.) → Last year (365 Tage),
-    darunter die Summe aller Einnahmen (+) und Ausgaben (−) darin, Überweisungen zählen nicht (Assets/Liabilities gibt es nicht mehr), darunter Abschnitte (Gruppen) als Kopfzeile mit Summe (blau, negativ rot) und
+    darunter die Summe aller Einnahmen (+) und Ausgaben (−) darin, rechts "Saved" = Sparquote in Prozent im selben Zeitraum (ohne Einnahmen "–"); Überweisungen zählen nie (Assets/Liabilities gibt es nicht mehr), darunter Abschnitte (Gruppen) als Kopfzeile mit Summe (blau, negativ rot) und
     Konten als Zeilen in einer Karte. Tipp auf ein Konto: Kontoseite mit "‹ Accounts", Monatswahl, Deposit /
     Withdrawal / Total / Balance und den Einträgen nach Tagen; Plus-Button unten rechts über der Leiste. Plus öffnet
     das Formular: Income / Expense / Transfer, Date, Account (Transfer: From/To), Category (Auswahl-Raster mit "Add"),
