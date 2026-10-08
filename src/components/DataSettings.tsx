@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { Habit, Todo } from '../types';
+import type { Habit, Money, Todo } from '../types';
 import { backupFileName, exportText, parseBackup } from '../lib/backup';
 import type { ParsedBackup } from '../lib/backup';
 
@@ -8,6 +8,8 @@ interface Props {
   update: (fn: (current: Habit[]) => Habit[]) => void;
   todos: Todo[];
   updateTodos: (fn: (current: Todo[]) => Todo[]) => void;
+  money: Money;
+  updateMoney: (fn: (current: Money) => Money) => void;
 }
 
 const ICON_PROPS = {
@@ -35,13 +37,13 @@ function UploadIcon() {
   );
 }
 
-export function DataSettings({ habits, update, todos, updateTodos }: Props) {
+export function DataSettings({ habits, update, todos, updateTodos, money, updateMoney }: Props) {
   const [msg, setMsg] = useState('');
   const [pending, setPending] = useState<ParsedBackup | null>(null); // gesetzt = Ersetzen wartet auf Bestätigung
   const fileInput = useRef<HTMLInputElement>(null);
 
   const backup = () => {
-    const text = exportText(habits, todos);
+    const text = exportText(habits, todos, money);
     const fileName = backupFileName();
     let file: File | null = null;
     try { file = new File([text], fileName, { type: 'application/json' }); } catch { /* ältere Browser */ }
@@ -87,6 +89,7 @@ export function DataSettings({ habits, update, todos, updateTodos }: Props) {
             ' with ' + data.habits.length + ' and ' + data.todos.length + '? Tap Confirm.'
           : 'Replace ' + n(habits.length, ' habit', ' habits') + ' with ' + data.habits.length + '? Tap Confirm.',
       );
+      if (data.money) setMsg((m) => m.replace('? Tap Confirm.', ' (money included)? Tap Confirm.'));
     };
     reader.onerror = () => setMsg('The file could not be read.');
     reader.readAsText(file);
@@ -100,6 +103,7 @@ export function DataSettings({ habits, update, todos, updateTodos }: Props) {
     }
     update(() => pending.habits);
     if (pending.todos) updateTodos(() => pending.todos!);
+    if (pending.money) updateMoney(() => pending.money!);
     const h = pending.habits.length;
     setMsg(
       'Restored: ' + h + (h === 1 ? ' habit' : ' habits') +

@@ -15,3 +15,41 @@ export interface Todo {
 }
 
 export type Tab = 'todo' | 'money' | 'cal' | 'gym' | 'notes';
+
+/** Money: alle Beträge in Cent (ganze Zahlen) */
+export type EntryType = 'income' | 'expense' | 'transfer';
+
+export interface MoneyGroup {
+  id: string;
+  name: string;
+}
+
+export interface MoneyAccount {
+  id: string;
+  groupId: string;
+  name: string;
+  /** Startguthaben in Cent (kann negativ sein) */
+  start: number;
+}
+
+export interface MoneyEntry {
+  id: string;
+  type: EntryType;
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** Konto, bei Überweisungen das Quellkonto */
+  accountId: string;
+  /** nur bei Überweisungen: Zielkonto */
+  toAccountId?: string;
+  category?: string;
+  /** immer positiv, in Cent */
+  amount: number;
+  note?: string;
+}
+
+export interface Money {
+  groups: MoneyGroup[];
+  accounts: MoneyAccount[];
+  entries: MoneyEntry[];
+  categories: { income: string[]; expense: string[] };
+}

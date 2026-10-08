@@ -1,18 +1,21 @@
-import type { Habit, Todo } from '../types';
+import type { Habit, Money, Todo } from '../types';
 import { keyOf } from './dates';
 import { newId } from './id';
 import { validColor } from './colors';
+import { parseMoney } from './money';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function exportText(habits: Habit[], todos: Todo[] = []): string {
-  return JSON.stringify({ app: 'habits', version: 1, exported: new Date().toISOString(), habits, todos });
+export function exportText(habits: Habit[], todos: Todo[] = [], money?: Money): string {
+  return JSON.stringify({ app: 'habits', version: 1, exported: new Date().toISOString(), habits, todos, ...(money ? { money } : {}) });
 }
 
 export interface ParsedBackup {
   habits: Habit[];
   /** null: die Sicherung enthält keine To-dos (ältere Datei), dann bleiben die aktuellen erhalten */
   todos: Todo[] | null;
+  /** null: die Sicherung enthält kein Money (ältere Datei), dann bleibt Money unverändert */
+  money: Money | null;
 }
 
 function parseTodos(raw: unknown): Todo[] | null {
@@ -74,5 +77,11 @@ export function parseBackup(text: string): ParsedBackup | null {
     todos = parseTodos((data as { todos?: unknown }).todos);
     if (todos === null) return null;
   }
-  return { habits: out, todos };
+  // Money ist optional (ältere Sicherungen haben es nicht)
+  let money: Money | null = null;
+  if (!Array.isArray(data) && data && (data as { money?: unknown }).money !== undefined) {
+    money = parseMoney((data as { money?: unknown }).money);
+    if (money === null) return null;
+  }
+  return { habits: out, todos, money };
 }

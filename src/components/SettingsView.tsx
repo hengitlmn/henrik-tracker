@@ -1,17 +1,20 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import type { Habit, Todo } from '../types';
+import type { Habit, Money, Todo } from '../types';
 import { DataSettings } from './DataSettings';
 import { HabitsSettings } from './HabitsSettings';
+import { MoneySettings } from './MoneySettings';
 
 interface Props {
   habits: Habit[];
   update: (fn: (current: Habit[]) => Habit[]) => void;
   todos: Todo[];
   updateTodos: (fn: (current: Todo[]) => Todo[]) => void;
+  money: Money;
+  updateMoney: (fn: (current: Money) => Money) => void;
 }
 
-type Page = 'root' | 'habits' | 'data';
+type Page = 'root' | 'habits' | 'money' | 'data';
 
 const SVG = {
   viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
@@ -34,7 +37,7 @@ function Row({ label, color, icon, onClick }: { label: string; color: string; ic
   );
 }
 
-export function SettingsView({ habits, update, todos, updateTodos }: Props) {
+export function SettingsView({ habits, update, todos, updateTodos, money, updateMoney }: Props) {
   const [page, setPage] = useState<Page>('root');
   const [dx, setDx] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
@@ -70,6 +73,12 @@ export function SettingsView({ habits, update, todos, updateTodos }: Props) {
               icon={<svg {...SVG} width="20" height="20"><rect x="4" y="4" width="16" height="16" rx="4.5" /><path d="M8.5 12.3l2.4 2.4 4.6-5" /></svg>}
             />
             <Row
+              label="Money"
+              color="#E8A33D"
+              onClick={() => go('money')}
+              icon={<svg {...SVG} width="20" height="20"><circle cx="12" cy="12" r="8.5" /><path d="M14.6 9.4c-.5-1-1.5-1.5-2.6-1.5-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2.1 2.6.9 2.6 2.1-1.1 2-2.6 2c-1.1 0-2.1-.5-2.6-1.5" /><path d="M12 6.4v1.5M12 16.1v1.5" /></svg>}
+            />
+            <Row
               label="Data"
               color="#2FA866"
               onClick={() => go('data')}
@@ -86,11 +95,12 @@ export function SettingsView({ habits, update, todos, updateTodos }: Props) {
               <svg {...SVG} width="18" height="18"><path d="M15 5.5L8.5 12l6.5 6.5" /></svg>
               <span>Settings</span>
             </button>
-            <h1 className="page-title">{page === 'habits' ? 'Habits' : 'Data'}</h1>
+            <h1 className="page-title">{page === 'habits' ? 'Habits' : page === 'money' ? 'Money' : 'Data'}</h1>
             <span />
           </div>
           {page === 'habits' && <HabitsSettings habits={habits} update={update} />}
-          {page === 'data' && <DataSettings habits={habits} update={update} todos={todos} updateTodos={updateTodos} />}
+          {page === 'money' && <MoneySettings money={money} update={updateMoney} />}
+          {page === 'data' && <DataSettings habits={habits} update={update} todos={todos} updateTodos={updateTodos} money={money} updateMoney={updateMoney} />}
         </>
       )}
     </div>

@@ -15,7 +15,7 @@ const tab = (name: string) => screen.getByRole('tab', { name });
 const bar = () => document.querySelector('.tabbar-inner')!;
 const sheet = () => document.querySelector('[role="dialog"]') as HTMLElement;
 /** Settings per langem Drücken auf die Leiste und Tipp auf das Menü öffnen, optional direkt in "Habits" oder "Data" springen */
-const openSettings = (page?: 'Habits' | 'Data') => {
+const openSettings = (page?: 'Habits' | 'Money' | 'Data') => {
   vi.useFakeTimers();
   fireEvent.pointerDown(bar(), { clientX: 150, pointerId: 1 });
   act(() => { vi.advanceTimersByTime(600); });
@@ -42,12 +42,12 @@ function addHabit(name: string) {
 }
 
 describe('Start und Tabs', () => {
-  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, Money, Gym und Notes sind noch leer', () => {
+  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, Gym und Notes sind noch leer', () => {
     render(<App />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['To-do', 'Money', 'Calendar', 'Gym', 'Notes']);
     expect(tab('Calendar').getAttribute('aria-selected')).toBe('true');
-    for (const [name, view] of [['Money', 'money'], ['Gym', 'gym'], ['Notes', 'notes']]) {
+    for (const [name, view] of [['Gym', 'gym'], ['Notes', 'notes']]) {
       fireEvent.click(tab(name));
       expect(tab(name).getAttribute('aria-selected')).toBe('true');
       expect(document.querySelector(`[data-view="${view}"]`)!.children).toHaveLength(0);
@@ -85,12 +85,12 @@ describe('Start und Tabs', () => {
 });
 
 describe('Einstellungen', () => {
-  it('zeigt Konto-Karte und zwei Zeilen, keine Überschrift', () => {
+  it('zeigt Konto-Karte und drei Zeilen, keine Überschrift', () => {
     render(<App />);
     openSettings();
     expect(sheet().querySelector('h1')).toBeNull();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    expect([...sheet().querySelectorAll('.row')].map((r) => r.textContent)).toEqual(['Habits', 'Data']);
+    expect([...sheet().querySelectorAll('.row')].map((r) => r.textContent)).toEqual(['Habits', 'Money', 'Data']);
     expect(sheet().querySelector('.avatar')).toBeTruthy();
   });
 
@@ -139,13 +139,13 @@ describe('Einstellungen', () => {
     expect(sheet().querySelector('h1')!.textContent).toBe('Habits');
     expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Back to settings'));
-    expect(sheet().querySelectorAll('.row')).toHaveLength(2);
+    expect(sheet().querySelectorAll('.row')).toHaveLength(3);
     fireEvent.click(screen.getByRole('button', { name: 'Data' }));
     expect(sheet().querySelector('h1')!.textContent).toBe('Data');
     expect(screen.getByText('Back up')).toBeTruthy();
     closeSettings();
     openSettings();
-    expect(sheet().querySelectorAll('.row')).toHaveLength(2); // wieder die Übersicht
+    expect(sheet().querySelectorAll('.row')).toHaveLength(3); // wieder die Übersicht
   });
 });
 
@@ -499,5 +499,122 @@ describe('Sichern und Wiederherstellen', () => {
     await vi.waitFor(() => expect(msg()).toMatch(/not a valid backup/));
     expect(screen.getByText('Restore')).toBeTruthy(); // kein Bestätigen-Zustand
     expect(JSON.parse(localStorage.getItem('habits-v1')!)).toHaveLength(1);
+  });
+});
+
+describe('Money', () => {
+  /** Settings → Money: Abschnitt und Konto anlegen */
+  const setupAccounts = () => {
+    openSettings('Money');
+    fireEvent.click(screen.getByRole('button', { name: 'Section' }));
+    fireEvent.change(screen.getByLabelText('New section'), { target: { value: 'Cash' } });
+    fireEvent.submit(screen.getByLabelText('New section').closest('form')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Add account to Cash' }));
+    fireEvent.change(screen.getByLabelText('New account'), { target: { value: 'Wallet' } });
+    fireEvent.change(screen.getByLabelText('Starting balance'), { target: { value: '100,50' } });
+    fireEvent.submit(screen.getByLabelText('New account').closest('form')!);
+  };
+
+  it('Settings: Abschnitt und Konto anlegen, Startguthaben, Entfernen per Doppeltipp', () => {
+    render(<App />);
+    setupAccounts();
+    const stored = JSON.parse(localStorage.getItem('money-v1')!);
+    expect(stored.groups.map((g: { name: string }) => g.name)).toEqual(['Cash']);
+    expect(stored.accounts[0]).toMatchObject({ name: 'Wallet', start: 10050 });
+    expect(sheet().textContent).toMatch(/€ 100,50/);
+    fireEvent.click(screen.getByLabelText('Remove Wallet'));
+    expect(screen.getByLabelText('Remove Wallet').textContent).toBe('Sure?'); // erster Tipp löscht nicht
+    fireEvent.click(screen.getByLabelText('Remove Wallet'));
+    expect(JSON.parse(localStorage.getItem('money-v1')!).accounts).toHaveLength(0);
+  });
+
+  it('Money-Tab zeigt Summen und Konten, Tipp aufs Konto öffnet die Einträge, Plus fügt hinzu', () => {
+    render(<App />);
+    setupAccounts();
+    closeSettings();
+    fireEvent.click(tab('Money'));
+    expect(document.querySelector('.totals')!.textContent).toMatch(/100,50.*0,00.*100,50/);
+    expect(document.querySelector('.grouphead')!.textContent).toMatch(/Cash.*€ 100,50/);
+    fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
+    expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
+    expect(document.querySelector('.fab')).toBeTruthy();
+
+    // Ausgabe
+    fireEvent.click(screen.getByLabelText('Add entry'));
+    fireEvent.click(screen.getByLabelText('Category'));
+    fireEvent.click(screen.getByRole('button', { name: 'food' }));
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true); // ohne Betrag
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12,5' } });
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Lunch' } });
+    fireEvent.click(save);
+    expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
+    expect(document.querySelector('.entry')!.textContent).toMatch(/food.*Lunch.*€ 12,50/);
+    expect(document.querySelector('.sum')!.textContent).toMatch(/Withdrawal12,50/);
+    expect(document.querySelector('.sum')!.textContent).toMatch(/Balance88,00/);
+
+    // Einnahme mit "Continue" bleibt im Formular
+    fireEvent.click(screen.getByLabelText('Add entry'));
+    fireEvent.click(screen.getByRole('button', { name: 'Income' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('status').textContent).toBe('Saved.');
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
+    fireEvent.click(screen.getByLabelText('Back to Wallet'));
+    expect(document.querySelector('.sum')!.textContent).toMatch(/Balance1.088,00/);
+    expect(JSON.parse(localStorage.getItem('money-v1')!).entries).toHaveLength(2);
+  });
+
+  it('Überweisung bucht von einem Konto aufs andere, Eintrag lässt sich ändern und löschen', () => {
+    render(<App />);
+    setupAccounts();
+    fireEvent.click(screen.getByRole('button', { name: 'Add account to Cash' }));
+    fireEvent.change(screen.getByLabelText('New account'), { target: { value: 'Bank' } });
+    fireEvent.submit(screen.getByLabelText('New account').closest('form')!);
+    closeSettings();
+    fireEvent.click(tab('Money'));
+    fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
+    fireEvent.click(screen.getByLabelText('Add entry'));
+    fireEvent.click(screen.getByRole('button', { name: 'Transfer' }));
+    expect(screen.queryByLabelText('Category')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '40' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(document.querySelector('.entry')!.textContent).toMatch(/Transfer.*Wallet → Bank.*€ 40,00/);
+    fireEvent.click(screen.getByLabelText('Back to accounts'));
+    const rows = [...document.querySelectorAll('.acc-row')].map((r) => r.textContent);
+    expect(rows).toEqual(['Wallet€ 60,50', 'Bank€ 40,00']);
+
+    // ändern und löschen
+    fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
+    fireEvent.click(document.querySelector('.entry')!);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(document.querySelector('.sum')!.textContent).toMatch(/Balance50,50/);
+    fireEvent.click(document.querySelector('.entry')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete entry' }));
+    expect(JSON.parse(localStorage.getItem('money-v1')!).entries).toHaveLength(1); // erster Tipp löscht nicht
+    fireEvent.click(screen.getByRole('button', { name: 'Sure?' }));
+    expect(JSON.parse(localStorage.getItem('money-v1')!).entries).toHaveLength(0);
+  });
+
+  it('eigene Kategorie hinzufügen, Sicherung enthält Money und stellt es wieder her', async () => {
+    render(<App />);
+    setupAccounts();
+    closeSettings();
+    fireEvent.click(tab('Money'));
+    fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
+    fireEvent.click(screen.getByLabelText('Add entry'));
+    fireEvent.click(screen.getByLabelText('Category'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.change(screen.getByLabelText('New category'), { target: { value: 'coffee' } });
+    fireEvent.keyDown(screen.getByLabelText('New category'), { key: 'Enter' });
+    expect(screen.getByLabelText('Category').textContent).toMatch(/coffee/);
+    expect(JSON.parse(localStorage.getItem('money-v1')!).categories.expense).toContain('coffee');
+
+    const { exportText, parseBackup } = await import('./lib/backup');
+    const money = JSON.parse(localStorage.getItem('money-v1')!);
+    expect(parseBackup(exportText([], [], money))!.money!.accounts[0].start).toBe(10050);
+    expect(parseBackup(JSON.stringify({ habits: [], money: 'kaputt' }))).toBeNull();
+    expect(parseBackup(JSON.stringify({ habits: [] }))!.money).toBeNull(); // ältere Sicherung: Money bleibt
   });
 });

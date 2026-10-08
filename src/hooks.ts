@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Habit, Todo } from './types';
-import { loadHabits, loadTodos, saveHabits, saveTodos } from './lib/storage';
+import type { Habit, Money, Todo } from './types';
+import { loadHabits, loadMoney, loadTodos, saveHabits, saveMoney, saveTodos } from './lib/storage';
 import { keyOf, parseKey } from './lib/dates';
 
 /** Liste aus localStorage. Gespeichert wird nur bei Änderungen (nie beim Start). */
@@ -26,6 +26,18 @@ export function useHabits() {
 export function useTodos() {
   const { items, update } = useStore<Todo>(loadTodos, saveTodos);
   return { todos: items, update };
+}
+
+export function useMoney() {
+  const [money, setMoney] = useState<Money>(loadMoney);
+  const ref = useRef(money);
+  const update = useCallback((fn: (current: Money) => Money) => {
+    const next = fn(ref.current);
+    ref.current = next;
+    saveMoney(next);
+    setMoney(next);
+  }, []);
+  return { money, update };
 }
 
 /** Heutiges Datum; aktualisiert sich, wenn die App nach Mitternacht wieder sichtbar wird. */

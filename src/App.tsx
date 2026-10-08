@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Tab } from './types';
-import { useHabits, useToday, useTodos, useWeekNav } from './hooks';
+import { useHabits, useMoney, useToday, useTodos, useWeekNav } from './hooks';
 import { CalendarView } from './components/CalendarView';
 import { SettingsSheet } from './components/SettingsSheet';
 import { SettingsView } from './components/SettingsView';
+import { MoneyView } from './components/MoneyView';
 import { TodoView } from './components/TodoView';
 import { TAB_ORDER, TabBar } from './components/TabBar';
 
 export default function App() {
   const { habits, update } = useHabits();
   const { todos, update: updateTodos } = useTodos();
+  const { money, update: updateMoney } = useMoney();
   const today = useToday();
   const week = useWeekNav();
 
@@ -49,7 +51,8 @@ export default function App() {
           style={{ '--dx': anim.dx + 'px' } as CSSProperties}
           data-view={tab}
         >
-          {/* money, gym und notes: bewusst noch leer, Platz für spätere Features */}
+          {/* gym und notes: bewusst noch leer, Platz für spätere Features */}
+          {tab === 'money' && <MoneyView money={money} update={updateMoney} today={today} />}
           {tab === 'todo' && <TodoView todos={todos} today={today} update={updateTodos} />}
           {tab === 'cal' && (
             <CalendarView
@@ -67,7 +70,7 @@ export default function App() {
       <TabBar current={tab} onSelect={selectTab} onOpenSettings={() => setSettingsOpen(true)} />
       {settingsOpen && (
         <SettingsSheet onClose={() => setSettingsOpen(false)}>
-          <SettingsView habits={habits} update={update} todos={todos} updateTodos={updateTodos} />
+          <SettingsView habits={habits} update={update} todos={todos} updateTodos={updateTodos} money={money} updateMoney={updateMoney} />
         </SettingsSheet>
       )}
     </>

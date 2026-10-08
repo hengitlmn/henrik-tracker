@@ -1,6 +1,7 @@
-import type { Habit, Todo } from '../types';
+import type { Habit, Money, Todo } from '../types';
 import { newId } from './id';
 import { validColor } from './colors';
+import { emptyMoney, parseMoney } from './money';
 
 /** Schlüssel und Format dürfen nie ohne Migration geändert werden (siehe CLAUDE.md). */
 export const STORAGE_KEY = 'habits-v1';
@@ -60,6 +61,26 @@ export function loadTodos(): Todo[] {
 export function saveTodos(todos: Todo[]): void {
   try {
     localStorage.setItem(TODO_KEY, JSON.stringify(todos));
+  } catch {
+    /* Speicher voll oder gesperrt: still ignorieren */
+  }
+}
+
+/** Eigener Schlüssel für Money (neues Feature, daher keine Migration nötig). */
+export const MONEY_KEY = 'money-v1';
+
+export function loadMoney(): Money {
+  try {
+    const raw = localStorage.getItem(MONEY_KEY);
+    return (raw ? parseMoney(JSON.parse(raw)) : null) ?? emptyMoney();
+  } catch {
+    return emptyMoney();
+  }
+}
+
+export function saveMoney(money: Money): void {
+  try {
+    localStorage.setItem(MONEY_KEY, JSON.stringify(money));
   } catch {
     /* Speicher voll oder gesperrt: still ignorieren */
   }

@@ -1,0 +1,203 @@
+import { useState } from 'react';
+import type { CSSProperties } from 'react';
+import type { Money, MoneyEntry } from '../types';
+import { MONTHS_EN, WEEKDAYS_SHORT, pad, parseKey } from '../lib/dates';
+import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, totals } from '../lib/money';
+import { EntryForm } from './EntryForm';
+
+interface Props {
+  money: Money;
+  update: (fn: (current: Money) => Money) => void;
+  today: Date;
+}
+
+type View = { kind: 'list' } | { kind: 'account'; id: string } | { kind: 'entry'; accountId: string; editId?: string };
+
+const SVG = {
+  viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+  strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+} as const;
+
+const tone = (cents: number) => (cents < 0 ? 'neg' : 'pos');
+
+export function MoneyView({ money, update, today }: Props) {
+  const [view, setView] = useState<View>({ kind: 'list' });
+  const [dx, setDx] = useState(0);
+  const [month, setMonth] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }));
+
+  const go = (next: View, dir: 1 | -1) => {
+    setDx(dir * 28);
+    setView(next);
+    window.scrollTo(0, 0);
+  };
+
+  const key = view.kind + ('id' in view ? view.id : '') + ('accountId' in view ? view.accountId + (view.editId ?? '') : '');
+
+  return (
+    <div key={key} className={dx ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
+      {view.kind === 'list' && <AccountList money={money} onOpen={(id) => go({ kind: 'account', id }, 1)} />}
+      {view.kind === 'account' && (
+        <AccountPage
+          money={money}
+          accountId={view.id}
+          month={month}
+          setMonth={setMonth}
+          onBack={() => go({ kind: 'list' }, -1)}
+          onAdd={() => go({ kind: 'entry', accountId: view.id }, 1)}
+          onEdit={(e) => go({ kind: 'entry', accountId: view.id, editId: e.id }, 1)}
+        />
+      )}
+      {view.kind === 'entry' && (
+        <EntryForm
+          money={money}
+          update={update}
+          today={today}
+          accountId={view.accountId}
+          editing={money.entries.find((e) => e.id === view.editId)}
+          onSaved={(date) => { const d = parseKey(date); setMonth({ y: d.getFullYear(), m: d.getMonth() }); }}
+          onBack={() => go({ kind: 'account', id: view.accountId }, -1)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AccountList({ money, onOpen }: { money: Money; onOpen: (id: string) => void }) {
+  const t = totals(money);
+  return (
+    <>
+      <div className="sticky-top">
+        <h1 className="page-title">Accounts</h1>
+        <div className="totals">
+          <span>Assets<b className="pos">{formatNumber(t.assets)}</b></span>
+          <span>Liabilities<b className="neg">{formatNumber(t.liabilities)}</b></span>
+          <span>Total<b>{formatNumber(t.total)}</b></span>
+        </div>
+      </div>
+      {money.groups.length === 0 && (
+        <p className="hint">No accounts yet. Add sections and accounts in Settings, then Money.</p>
+      )}
+      {money.groups.map((g) => (
+        <section key={g.id}>
+          <div className="grouphead">
+            <span>{g.name}</span>
+            <span className={tone(groupTotal(money, g.id))}>{formatMoney(groupTotal(money, g.id))}</span>
+          </div>
+          {money.accounts.some((a) => a.groupId === g.id) && (
+            <div className="acc-card">
+              {money.accounts.filter((a) => a.groupId === g.id).map((a) => {
+                const b = accountBalance(money, a.id);
+                return (
+                  <button key={a.id} type="button" className="acc-row" onClick={() => onOpen(a.id)}>
+                    <span>{a.name}</span>
+                    <span className={tone(b)}>{formatMoney(b)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      ))}
+    </>
+  );
+}
+
+interface AccountPageProps {
+  money: Money;
+  accountId: string;
+  month: { y: number; m: number };
+  setMonth: (m: { y: number; m: number }) => void;
+  onBack: () => void;
+  onAdd: () => void;
+  onEdit: (e: MoneyEntry) => void;
+}
+
+function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit }: AccountPageProps) {
+  const account = money.accounts.find((a) => a.id === accountId);
+  if (!account) return null;
+  const name = (id?: string) => money.accounts.find((a) => a.id === id)?.name ?? '?';
+  const prefix = month.y + '-' + pad(month.m + 1);
+  const inMonth = money.entries
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => (e.accountId === accountId || e.toAccountId === accountId) && e.date.startsWith(prefix))
+    .sort((a, b) => (a.e.date === b.e.date ? b.i - a.i : a.e.date < b.e.date ? 1 : -1))
+    .map(({ e }) => e);
+
+  const deposit = inMonth.reduce((s, e) => s + Math.max(0, entryEffect(e, accountId)), 0);
+  const withdrawal = inMonth.reduce((s, e) => s + Math.max(0, -entryEffect(e, accountId)), 0);
+
+  const days: { date: string; entries: MoneyEntry[] }[] = [];
+  for (const e of inMonth) {
+    const last = days[days.length - 1];
+    if (last && last.date === e.date) last.entries.push(e);
+    else days.push({ date: e.date, entries: [e] });
+  }
+
+  const shift = (delta: number) => {
+    const d = new Date(month.y, month.m + delta, 1);
+    setMonth({ y: d.getFullYear(), m: d.getMonth() });
+  };
+
+  return (
+    <>
+      <div className="subhead">
+        <button type="button" className="back" aria-label="Back to accounts" onClick={onBack}>
+          <svg {...SVG} width="18" height="18"><path d="M15 5.5L8.5 12l6.5 6.5" /></svg>
+          <span>Accounts</span>
+        </button>
+        <h1 className="page-title">{account.name}</h1>
+        <span />
+      </div>
+
+      <div className="monthnav">
+        <button type="button" aria-label="Previous month" onClick={() => shift(-1)}>‹</button>
+        <span>{MONTHS_EN[month.m].slice(0, 3)} {month.y}</span>
+        <button type="button" aria-label="Next month" onClick={() => shift(1)}>›</button>
+      </div>
+
+      <div className="sum">
+        <span>Deposit<b className="pos">{formatNumber(deposit)}</b></span>
+        <span>Withdrawal<b className="neg">{formatNumber(withdrawal)}</b></span>
+        <span>Total<b>{formatNumber(deposit - withdrawal)}</b></span>
+        <span>Balance<b className="muted">{formatNumber(accountBalance(money, accountId))}</b></span>
+      </div>
+
+      {days.map(({ date, entries }) => {
+        const d = parseKey(date);
+        const inc = entries.reduce((s, e) => s + Math.max(0, entryEffect(e, accountId)), 0);
+        const exp = entries.reduce((s, e) => s + Math.max(0, -entryEffect(e, accountId)), 0);
+        return (
+          <section key={date} className="daygroup">
+            <div className="dayhead">
+              <b>{pad(d.getDate())}</b>
+              <span className="wd">{WEEKDAYS_SHORT[d.getDay()]}</span>
+              <span className="my">{pad(d.getMonth() + 1)}.{d.getFullYear()}</span>
+              <span className="pos">{inc ? formatMoney(inc) : ''}</span>
+              <span className="neg">{exp ? formatMoney(exp) : ''}</span>
+            </div>
+            <div className="acc-card">
+              {entries.map((e) => {
+                const fx = entryEffect(e, accountId);
+                return (
+                  <button key={e.id} type="button" className="entry" aria-label={'Edit entry ' + (e.note || e.category || 'transfer')} onClick={() => onEdit(e)}>
+                    <span className="cat">{e.type === 'transfer' ? 'Transfer' : e.category ?? ''}</span>
+                    <span className="what">
+                      <b>{e.note || (e.type === 'transfer' ? 'Transfer' : e.category || (e.type === 'income' ? 'Income' : 'Expense'))}</b>
+                      <i>{e.type === 'transfer' ? name(e.accountId) + ' → ' + name(e.toAccountId) : account.name}</i>
+                    </span>
+                    <span className={'amt ' + (fx < 0 ? 'neg' : 'pos')}>{formatMoney(Math.abs(fx))}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+      {days.length === 0 && <p className="hint">No entries this month.</p>}
+
+      <button type="button" className="fab" aria-label="Add entry" onClick={onAdd}>
+        <svg {...SVG} width="26" height="26" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+    </>
+  );
+}

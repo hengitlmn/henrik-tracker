@@ -92,7 +92,7 @@ export function HabitsSettings({ habits, update }: Props) {
 }
 
 /** Entfernen mit Doppeltipp: erster Tipp fragt nach, zweiter innerhalb von 3 s löscht. */
-function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }) {
+export function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }) {
   const [armed, setArmed] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);

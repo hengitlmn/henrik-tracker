@@ -12,8 +12,8 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 - `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
 - `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
 - `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView`, `SettingsView` (Übersicht) mit
-  `HabitsSettings` und `DataSettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
-- `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
+  `HabitsSettings` und `DataSettings`, `MoneyView` (Konten, Kontoseite) mit `EntryForm`, `MoneySettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
+- `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `money.ts` (Salden, Format, Betrag lesen, Prüfung), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
 - `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
 - `src/**/*.test.ts(x)`: Tests (jsdom). `src/test-setup.ts` leert `localStorage` nach jedem Test.
 - `public/`: nur die Icons (`icon-180/192/512.png`). Manifest und Service Worker erzeugt der Build.
@@ -54,8 +54,12 @@ Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true }, col
 
 To-dos: eigener Schlüssel `todos-v1`, Array von `{ id: string, title: string, completedAt?: ISO-Zeitpunkt }` (kein `completedAt` = offen).
 
-Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...], todos: [...] }`.
-`todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
+Money: eigener Schlüssel `money-v1`, `{ groups: [{id,name}], accounts: [{id,groupId,name,start}], entries: [{id,type:"income"|"expense"|"transfer",date:"YYYY-MM-DD",accountId,toAccountId?,category?,amount,note?}], categories: {income:[],expense:[]} }`.
+Alle Beträge in Cent (ganze Zahlen, `amount` immer positiv). Kontostand = `start` + Einträge (Überweisung: Quelle minus, Ziel plus).
+Anzeige deutsch (`€ 1.057,60`), Eingabe `12,5` oder `12.50`. Ungültige Teile fallen beim Laden/Import weg (`parseMoney`).
+
+Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...], todos: [...], money: {...} }`.
+`money` ist wie `todos` optional beim Import (fehlt es, bleibt Money unverändert). `todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
 Der Import akzeptiert zusätzlich das ältere reine Array-Format und verwirft ungültige Datumsschlüssel.
 Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" bestätigen).
 
@@ -83,7 +87,14 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   kurz ein (leichter Schub von der Seite):
   - von links nach rechts: To-do (Haken im Quadrat), Money (Münze mit $), Kalender (Mitte, beim Start aktiv,
     Icon ist ein H im Stil des App-Logos), Gym (Hantel), Notes (Notizblatt)
-  - Money, Gym und Notes sind bewusst noch leer (für spätere Features)
+  - Gym und Notes sind bewusst noch leer (für spätere Features)
+  - Money-Tab (Vorbild: Money-Manager-App aus den Screenrecordings des Nutzers): fester Kopf "Accounts" mit
+    Assets / Liabilities / Total, darunter Abschnitte (Gruppen) als Kopfzeile mit Summe (blau, negativ rot) und
+    Konten als Zeilen in einer Karte. Tipp auf ein Konto: Kontoseite mit "‹ Accounts", Monatswahl, Deposit /
+    Withdrawal / Total / Balance und den Einträgen nach Tagen; Plus-Button unten rechts über der Leiste. Plus öffnet
+    das Formular: Income / Expense / Transfer, Date, Account (Transfer: From/To), Category (Auswahl-Raster mit "Add"),
+    Amount, Note, "Save" und "Continue" (speichert und bleibt offen). Tipp auf einen Eintrag = ändern/löschen.
+    Noch nicht gebaut: Stats, Budget, Wiederholungen, Fotos, Konten ausblenden/sortieren, Gebühren bei Überweisungen.
   - Settings ist kein Tab mehr: Lange auf die Leiste drücken (350 ms). Die Leiste gibt kurz nach (`squish`) und spuckt
     wie ein Wassertropfen ein kleines Glas-Menü "Settings" nach oben aus (Dehnen/Stauchen, ohne Zusatzblase,
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings
@@ -98,7 +109,7 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
 - Einstellungen (im Blatt) im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
   Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:
-  "Habits" (Unterseite: zunächst nur ein grauer "+ Add"-Button; Tipp öffnet ein Eingabefeld; jede Gewohnheit erscheint
+  "Money" (Unterseite: Abschnitte und Konten anlegen, Startguthaben optional, Entfernen per Doppeltipp; entfernt auch die Einträge des Kontos) und "Habits" (Unterseite: zunächst nur ein grauer "+ Add"-Button; Tipp öffnet ein Eingabefeld; jede Gewohnheit erscheint
   darunter als graue Karte mit Name, Entfernen per Doppeltipp und Farbwahl für die abgehakten Kreise, 7 Farben) und "Data" (Unterseite: zwei
   Buttons nebeneinander, "Back up" speichert eine Datei über das Teilen-Menü, "Restore" wählt eine Datei und
   braucht dann "Confirm"). Unterseiten haben oben links "‹ Settings" zum Zurückgehen. Schließen des Blatts setzt
