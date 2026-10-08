@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Habit, Todo } from '../types';
 import { DataSettings } from './DataSettings';
@@ -37,15 +37,17 @@ function Row({ label, color, icon, onClick }: { label: string; color: string; ic
 export function SettingsView({ habits, update, todos, updateTodos }: Props) {
   const [page, setPage] = useState<Page>('root');
   const [dx, setDx] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
 
   const go = (next: Page) => {
     setDx(next === 'root' ? -28 : 28);
     setPage(next);
-    window.scrollTo(0, 0);
+    const body = ref.current?.closest('.sheet-body');
+    if (body) body.scrollTop = 0;
   };
 
   return (
-    <div key={page} className={dx ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
+    <div ref={ref} key={page} className={dx ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
       {page === 'root' && (
         <>
           {/* Konto: Anmelden kommt später, noch ohne Funktion */}

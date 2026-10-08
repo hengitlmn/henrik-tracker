@@ -12,10 +12,25 @@ beforeEach(() => {
 
 const tab = (name: string) => screen.getByRole('tab', { name });
 /** Einstellungen öffnen und optional direkt in "Habits" oder "Data" springen */
+const bar = () => document.querySelector('.tabbar-inner')!;
+const sheet = () => document.querySelector('[role="dialog"]') as HTMLElement;
+/** Settings per langem Drücken auf die Leiste und Tipp auf das Menü öffnen, optional direkt in "Habits" oder "Data" springen */
 const openSettings = (page?: 'Habits' | 'Data') => {
-  fireEvent.click(tab('Settings'));
+  vi.useFakeTimers();
+  fireEvent.pointerDown(bar(), { clientX: 150, pointerId: 1 });
+  act(() => { vi.advanceTimersByTime(600); });
+  fireEvent.pointerUp(bar(), { clientX: 150, pointerId: 1 });
+  vi.useRealTimers();
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Settings' }));
   const row = page && screen.queryByRole('button', { name: page });
   if (row) fireEvent.click(row); // schon auf der Unterseite: nichts zu tun
+};
+/** Settings über das X schließen (nach der Animation verschwindet das Blatt) */
+const closeSettings = () => {
+  vi.useFakeTimers();
+  fireEvent.click(screen.getByRole('button', { name: 'Close settings' }));
+  act(() => { vi.advanceTimersByTime(400); });
+  vi.useRealTimers();
 };
 const weekNumber = () => parseInt(document.querySelector('.nav .label')!.textContent!.replace('Week ', ''), 10);
 
@@ -27,12 +42,12 @@ function addHabit(name: string) {
 }
 
 describe('Start und Tabs', () => {
-  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, Profile und Stats sind noch leer', () => {
+  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, Money, Gym und Notes sind noch leer', () => {
     render(<App />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['Profile', 'To-do', 'Calendar', 'Stats', 'Settings']);
+    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['To-do', 'Money', 'Calendar', 'Gym', 'Notes']);
     expect(tab('Calendar').getAttribute('aria-selected')).toBe('true');
-    for (const [name, view] of [['Profile', 'profile'], ['Stats', 'stats']]) {
+    for (const [name, view] of [['Money', 'money'], ['Gym', 'gym'], ['Notes', 'notes']]) {
       fireEvent.click(tab(name));
       expect(tab(name).getAttribute('aria-selected')).toBe('true');
       expect(document.querySelector(`[data-view="${view}"]`)!.children).toHaveLength(0);
@@ -64,8 +79,8 @@ describe('Start und Tabs', () => {
 
   it('Ansichtswechsel blendet animiert ein', () => {
     render(<App />);
-    fireEvent.click(tab('Settings'));
-    expect(document.querySelector('[data-view="settings"]')!.classList.contains('view-in')).toBe(true);
+    fireEvent.click(tab('Money'));
+    expect(document.querySelector('[data-view="money"]')!.classList.contains('view-in')).toBe(true);
   });
 });
 
@@ -73,25 +88,64 @@ describe('Einstellungen', () => {
   it('zeigt Konto-Karte und zwei Zeilen, keine Überschrift', () => {
     render(<App />);
     openSettings();
-    expect(document.querySelector('h1')).toBeNull();
+    expect(sheet().querySelector('h1')).toBeNull();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
-    expect([...document.querySelectorAll('.row')].map((r) => r.textContent)).toEqual(['Habits', 'Data']);
-    expect(document.querySelector('.avatar')).toBeTruthy();
+    expect([...sheet().querySelectorAll('.row')].map((r) => r.textContent)).toEqual(['Habits', 'Data']);
+    expect(sheet().querySelector('.avatar')).toBeTruthy();
   });
 
-  it('Zeilen öffnen Unterseiten, Zurück führt zur Übersicht, Tab-Wechsel setzt zurück', () => {
+  it('erscheint nur nach langem Drücken: erst Menü, dann Blatt; X schließt', () => {
+    render(<App />);
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    vi.useFakeTimers();
+    fireEvent.pointerDown(bar(), { clientX: 280, pointerId: 1 });
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(screen.queryByRole('menuitem')).toBeNull(); // noch zu kurz
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(bar().classList.contains('buzz')).toBe(true); // kurzes Rütteln
+    expect(screen.getByRole('menuitem', { name: 'Settings' })).toBeTruthy();
+    fireEvent.pointerUp(bar(), { clientX: 280, pointerId: 1 });
+    vi.useRealTimers();
+    expect(tab('Calendar').getAttribute('aria-selected')).toBe('true'); // langes Drücken wählt keinen Tab
+    expect(sheet()).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Settings' }));
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(sheet()).toBeTruthy();
+    closeSettings();
+    expect(sheet()).toBeNull();
+  });
+
+  it('kurzer Tipp oder Ziehen öffnet das Menü nicht, Tipp daneben schließt es', () => {
+    render(<App />);
+    vi.useFakeTimers();
+    fireEvent.pointerDown(bar(), { clientX: 150, pointerId: 1 });
+    fireEvent.pointerUp(bar(), { clientX: 150, pointerId: 1 });
+    fireEvent.pointerDown(bar(), { clientX: 150, pointerId: 1 });
+    fireEvent.pointerMove(bar(), { clientX: 200, pointerId: 1 });
+    act(() => { vi.advanceTimersByTime(700); });
+    fireEvent.pointerUp(bar(), { clientX: 200, pointerId: 1 });
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    fireEvent.pointerDown(bar(), { clientX: 150, pointerId: 1 });
+    act(() => { vi.advanceTimersByTime(600); });
+    fireEvent.pointerUp(bar(), { clientX: 150, pointerId: 1 });
+    vi.useRealTimers();
+    fireEvent.pointerDown(document.querySelector('.tabmenu-backdrop')!);
+    expect(screen.queryByRole('menuitem')).toBeNull();
+  });
+
+  it('Zeilen öffnen Unterseiten, Zurück führt zur Übersicht, Schließen und Öffnen setzt zurück', () => {
     render(<App />);
     openSettings('Habits');
-    expect(document.querySelector('h1')!.textContent).toBe('Habits');
+    expect(sheet().querySelector('h1')!.textContent).toBe('Habits');
     expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Back to settings'));
-    expect(document.querySelectorAll('.row')).toHaveLength(2);
+    expect(sheet().querySelectorAll('.row')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Data' }));
-    expect(document.querySelector('h1')!.textContent).toBe('Data');
+    expect(sheet().querySelector('h1')!.textContent).toBe('Data');
     expect(screen.getByText('Back up')).toBeTruthy();
-    fireEvent.click(tab('Calendar'));
-    fireEvent.click(tab('Settings'));
-    expect(document.querySelectorAll('.row')).toHaveLength(2); // wieder die Übersicht
+    closeSettings();
+    openSettings();
+    expect(sheet().querySelectorAll('.row')).toHaveLength(2); // wieder die Übersicht
   });
 });
 
@@ -99,9 +153,9 @@ describe('Habits-Einstellungen', () => {
   it('ist zuerst leer: nur der graue Add-Button', () => {
     render(<App />);
     openSettings('Habits');
-    expect(document.querySelector('.addbtn')!.textContent).toBe('Add');
+    expect(sheet().querySelector('.addbtn')!.textContent).toBe('Add');
     expect(screen.queryByLabelText('New habit')).toBeNull();
-    expect(document.querySelectorAll('li')).toHaveLength(0);
+    expect(sheet().querySelectorAll('li')).toHaveLength(0);
     expect(document.body.textContent).not.toMatch(/No habits|New habit/);
   });
 
@@ -109,10 +163,10 @@ describe('Habits-Einstellungen', () => {
     render(<App />);
     addHabit('One');
     addHabit('Two');
-    const list = document.querySelector('.list')!;
+    const list = sheet().querySelector('.list')!;
     expect(list.children).toHaveLength(2);
     expect(list.nextElementSibling!.classList.contains('addbtn')).toBe(true);
-    const head = document.querySelector('.subhead')!;
+    const head = sheet().querySelector('.subhead')!;
     expect(head.querySelector('[aria-label="Back to settings"]')).toBeTruthy();
     expect(head.querySelector('h1')!.textContent).toBe('Habits');
     expect(head.nextElementSibling!.contains(list)).toBe(true); // Inhalt liegt außerhalb der festen Leiste
@@ -124,16 +178,16 @@ describe('Habits-Einstellungen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     const input = screen.getByLabelText('New habit');
     fireEvent.submit(input.closest('form')!); // leer: nichts passiert
-    expect(document.querySelectorAll('.list li')).toHaveLength(0);
+    expect(sheet().querySelectorAll('.list li')).toHaveLength(0);
     fireEvent.blur(input);
     expect(screen.queryByLabelText('New habit')).toBeNull();
-    expect(document.querySelector('.addbtn')).toBeTruthy();
+    expect(sheet().querySelector('.addbtn')).toBeTruthy();
   });
 
   it('jede Gewohnheit ist eine Karte mit Farbwahl, die Farbe färbt die abgehakten Kreise', () => {
     render(<App />);
     addHabit('Water');
-    const card = document.querySelector('.list li') as HTMLElement;
+    const card = sheet().querySelector('.list li') as HTMLElement;
     const group = within(card).getByRole('radiogroup', { name: 'Color for Water' });
     const radios = within(group).getAllByRole('radio');
     expect(radios).toHaveLength(7);
@@ -142,7 +196,7 @@ describe('Habits-Einstellungen', () => {
     expect(within(group).getByRole('radio', { name: 'Green' }).getAttribute('aria-checked')).toBe('true');
     expect(JSON.parse(localStorage.getItem('habits-v1')!)[0].color).toBe('#4CC38A');
 
-    fireEvent.click(tab('Calendar'));
+    closeSettings();
     const dot = document.querySelector('.list .dot.today') as HTMLButtonElement;
     expect(dot.style.getPropertyValue('--c')).toBe('#4CC38A');
   });
@@ -233,8 +287,7 @@ describe('To-do-Tab', () => {
   it('Sicherung enthält To-dos und stellt sie wieder her', async () => {
     localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'Mine' }]));
     render(<App />);
-    fireEvent.click(tab('Settings'));
-    fireEvent.click(screen.getByRole('button', { name: 'Data' }));
+    openSettings('Data');
     let shared: { files: File[] } | null = null;
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
     Object.defineProperty(navigator, 'share', { configurable: true, value: (o: { files: File[] }) => { shared = o; return Promise.resolve(); } });
@@ -252,8 +305,7 @@ describe('To-do-Tab', () => {
   it('ältere Sicherung ohne To-dos lässt die To-dos unverändert', async () => {
     localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'Mine' }]));
     render(<App />);
-    fireEvent.click(tab('Settings'));
-    fireEvent.click(screen.getByRole('button', { name: 'Data' }));
+    openSettings('Data');
     const file = new File([JSON.stringify([{ id: 'h', name: 'Old habit', done: {} }])], 'b.json');
     fireEvent.change(screen.getByTestId('file-input'), { target: { files: [file] } });
     await vi.waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/Replace 0 habits with 1\?/));
@@ -304,11 +356,11 @@ describe('Gewohnheiten', () => {
     render(<App />);
     addHabit('Water');
     addHabit('Read');
-    expect(document.querySelectorAll('.list li')).toHaveLength(2);
+    expect(sheet().querySelectorAll('.list li')).toHaveLength(2);
     expect(screen.queryByLabelText('New habit')).toBeNull(); // Eingabe schließt sich nach dem Hinzufügen
     expect(JSON.parse(localStorage.getItem('habits-v1')!).map((h: { name: string }) => h.name)).toEqual(['Water', 'Read']);
 
-    fireEvent.click(tab('Calendar'));
+    closeSettings();
     expect(document.querySelectorAll('.list li')).toHaveLength(2);
     const todayDot = document.querySelector('.list li .dot.today') as HTMLButtonElement;
     fireEvent.click(todayDot);
@@ -319,9 +371,9 @@ describe('Gewohnheiten', () => {
 
     openSettings('Habits');
     fireEvent.click(screen.getByLabelText('Remove Water'));
-    expect(document.querySelectorAll('.list li')).toHaveLength(2); // erster Tipp löscht nicht
+    expect(sheet().querySelectorAll('.list li')).toHaveLength(2); // erster Tipp löscht nicht
     fireEvent.click(screen.getByLabelText('Remove Water'));
-    expect(document.querySelectorAll('.list li')).toHaveLength(1);
+    expect(sheet().querySelectorAll('.list li')).toHaveLength(1);
   });
 
   it('zukünftige Tage sind gesperrt, vergangene nachtragbar', () => {
@@ -346,23 +398,21 @@ describe('Gewohnheiten', () => {
 });
 
 describe('Tab-Leiste', () => {
-  const bar = () => document.querySelector('.tabbar-inner')!;
-
   it('Tipp wählt direkt den Tab mit schneller Animation', () => {
     render(<App />);
     fireEvent.pointerDown(bar(), { clientX: 280, pointerId: 1 });
     fireEvent.pointerUp(bar(), { clientX: 280, pointerId: 1 });
-    expect(tab('Settings').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Notes').getAttribute('aria-selected')).toBe('true');
     expect(document.querySelector('.pill')!.classList.contains('fast')).toBe(true);
     fireEvent.pointerDown(bar(), { clientX: 20, pointerId: 1 });
     fireEvent.pointerUp(bar(), { clientX: 20, pointerId: 1 });
-    expect(tab('Profile').getAttribute('aria-selected')).toBe('true');
+    expect(tab('To-do').getAttribute('aria-selected')).toBe('true');
     fireEvent.pointerDown(bar(), { clientX: 100, pointerId: 1 });
     fireEvent.pointerUp(bar(), { clientX: 100, pointerId: 1 });
-    expect(tab('To-do').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Money').getAttribute('aria-selected')).toBe('true');
     fireEvent.pointerDown(bar(), { clientX: 215, pointerId: 1 });
     fireEvent.pointerUp(bar(), { clientX: 215, pointerId: 1 });
-    expect(tab('Stats').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Gym').getAttribute('aria-selected')).toBe('true');
   });
 
   it('Ziehen: Hover folgt dem Finger, Loslassen wählt den Tab', () => {
@@ -373,10 +423,10 @@ describe('Tab-Leiste', () => {
     expect(bar().classList.contains('dragging')).toBe(true);
     expect(tab('Calendar').classList.contains('hover')).toBe(true);
     fireEvent.pointerMove(bar(), { clientX: 290, pointerId: 1 });
-    expect(tab('Settings').classList.contains('hover')).toBe(true);
+    expect(tab('Notes').classList.contains('hover')).toBe(true);
     expect(tab('Calendar').classList.contains('hover')).toBe(false);
     fireEvent.pointerUp(bar(), { clientX: 290, pointerId: 1 });
-    expect(tab('Settings').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Notes').getAttribute('aria-selected')).toBe('true');
     expect(bar().classList.contains('dragging')).toBe(false);
   });
 

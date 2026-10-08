@@ -14,4 +14,4 @@ export interface Todo {
   completedAt?: string;
 }
 
-export type Tab = 'profile' | 'todo' | 'cal' | 'stats' | 'settings';
+export type Tab = 'todo' | 'money' | 'cal' | 'gym' | 'notes';

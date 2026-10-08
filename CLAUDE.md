@@ -12,7 +12,7 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 - `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
 - `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
 - `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView`, `SettingsView` (Übersicht) mit
-  `HabitsSettings` und `DataSettings`, `TabBar` (Pille, Ziehen)
+  `HabitsSettings` und `DataSettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
 - `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
 - `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
 - `src/**/*.test.ts(x)`: Tests (jsdom). `src/test-setup.ts` leert `localStorage` nach jedem Test.
@@ -81,9 +81,13 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   iPhone, bewusst tief), aktiver Tab mit runder Hinterlegung, die beim Wechsel gleitet. Ein einfacher Tipp lässt sie schneller
   rübergleiten. Man kann mit dem Finger über die Leiste ziehen (ab ca. 6 px Bewegung), die Hinterlegung folgt, Loslassen wählt den Tab. Beim Tab-Wechsel blendet die Ansicht
   kurz ein (leichter Schub von der Seite):
-  - von links nach rechts: Profil (Person), To-do (Haken im Quadrat), Kalender (Mitte, beim Start aktiv),
-    Stats (Kurve nach oben), Einstellungen (Zahnrad)
-  - Profil und Stats sind bewusst noch leer (für spätere Features)
+  - von links nach rechts: To-do (Haken im Quadrat), Money (Münze mit $), Kalender (Mitte, beim Start aktiv,
+    Icon ist ein H im Stil des App-Logos), Gym (Hantel), Notes (Notizblatt)
+  - Money, Gym und Notes sind bewusst noch leer (für spätere Features)
+  - Settings ist kein Tab mehr: Lange auf die Leiste drücken (500 ms) lässt sie kurz rütteln (plus `navigator.vibrate`,
+    das iOS nicht kennt) und blendet darüber ein kleines Glas-Menü "Settings" ein. Tipp darauf öffnet die Settings
+    als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp auf den abgedunkelten Hintergrund).
+    Langes Drücken wählt keinen Tab; Ziehen über die Leiste bricht es ab.
   - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers): fester Kopf "Today" plus Datum (`Sat 3. Oct`),
     Aufgaben als einfache Zeilen mit Kästchen und fettem Titel, darunter ein "+" (Tipp öffnet eine Eingabezeile, Enter
     fügt hinzu und lässt sie offen). Abhaken verschiebt die Aufgabe unter "Hide completed" (auf-/zuklappbar) mit
@@ -91,12 +95,12 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     Papierkorb daneben = löschen. Noch nicht gebaut: Datum/Uhrzeit, Tags, Detail-Sheet, Suche, Sortieren, Erinnerungen,
     Wiederholung, Dauer, roter Plus-Button (bewusst auf später verschoben).
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
-- Einstellungen im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
+- Einstellungen (im Blatt) im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
   Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:
   "Habits" (Unterseite: zunächst nur ein grauer "+ Add"-Button; Tipp öffnet ein Eingabefeld; jede Gewohnheit erscheint
   darunter als graue Karte mit Name, Entfernen per Doppeltipp und Farbwahl für die abgehakten Kreise, 7 Farben) und "Data" (Unterseite: zwei
   Buttons nebeneinander, "Back up" speichert eine Datei über das Teilen-Menü, "Restore" wählt eine Datei und
-  braucht dann "Confirm"). Unterseiten haben oben links "‹ Settings" zum Zurückgehen. Wechsel des Tabs setzt
+  braucht dann "Confirm"). Unterseiten haben oben links "‹ Settings" zum Zurückgehen. Schließen des Blatts setzt
   die Einstellungen auf die Übersicht zurück. Code kopieren/einfügen gibt es nicht mehr.
 - Alle Icons sind einfache Inline-SVGs mit `currentColor`, Strichstärke 1.6.
 
@@ -117,6 +121,6 @@ Umzug von Netlify: einmal Daten sichern, neue Adresse hinzufügen, wiederherstel
 
 ## Offene Punkte / Ideen
 
-- Linker Tab (Stift) ist leer, Inhalt noch offen.
+- Money-, Gym- und Notes-Tab sind leer, Inhalt noch offen.
 - Echtes Gerätetesten steht aus: Zoom-Sperre, Schrift (Archivo Black), Teilen-Menü bei "Als Datei sichern",
   Offline-Start. Bei Problemen zuerst dort prüfen.
