@@ -658,4 +658,101 @@ describe('Money', () => {
     fireEvent.pointerUp(area, { clientX: 250, clientY: 98, pointerId: 2 });
     expect(label()).toBe(start);
   });
+
+  /** Konto "Wallet" mit zwei Einträgen anlegen und Money öffnen */
+  const seedEntries = () => {
+    setupAccounts();
+    closeSettings();
+    fireEvent.click(tab('Money'));
+    fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
+    const add = (type: 'Income' | 'Expense', amount: string, note: string, cat?: string) => {
+      fireEvent.click(screen.getByLabelText('Add entry'));
+      fireEvent.click(screen.getByRole('button', { name: type }));
+      if (cat) {
+        fireEvent.click(screen.getByLabelText('Category'));
+        fireEvent.click(screen.getByRole('button', { name: cat }));
+      }
+      fireEvent.change(screen.getByLabelText('Amount'), { target: { value: amount } });
+      fireEvent.change(screen.getByLabelText('Note'), { target: { value: note } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    };
+    add('Income', '2000', 'Paycheck', 'salary');
+    add('Expense', '50', 'Pizza night', 'food');
+    fireEvent.click(screen.getByLabelText('Back to accounts'));
+  };
+  const openMoneySection = (name: 'Stats' | 'Calendar' | 'Accounts') => {
+    const tap = () => {
+      fireEvent.pointerDown(bar(), { clientX: 100, pointerId: 1 });
+      fireEvent.pointerUp(bar(), { clientX: 100, pointerId: 1 });
+    };
+    tap(); tap();
+    fireEvent.click(screen.getByRole('menuitemradio', { name }));
+  };
+
+  it('Calendar: alle Einträge untereinander, neueste zuerst, Suche nach Begriff und Tag', () => {
+    render(<App />);
+    seedEntries();
+    openMoneySection('Calendar');
+    const titles = () => [...document.querySelectorAll('[data-money="calendar"] .entry b')].map((b) => b.textContent);
+    expect(titles()).toEqual(['Pizza night', 'Paycheck']); // zuletzt angelegt zuerst
+    expect(document.querySelector('.sum')!.textContent).toMatch(/Income2.000,00.*Expense50,00.*Total1.950,00/);
+
+    fireEvent.change(screen.getByLabelText('Search entries'), { target: { value: 'pizza' } });
+    expect(titles()).toEqual(['Pizza night']);
+    fireEvent.change(screen.getByLabelText('Search entries'), { target: { value: 'salary wallet' } });
+    expect(titles()).toEqual(['Paycheck']);
+    fireEvent.change(screen.getByLabelText('Search entries'), { target: { value: 'nothing here' } });
+    expect(document.querySelector('.hint')!.textContent).toBe('No matching entries.');
+    fireEvent.click(screen.getByLabelText('Clear search'));
+    expect(titles()).toHaveLength(2);
+
+    // Tag filtern
+    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '2001-01-01' } });
+    expect(titles()).toEqual([]);
+    fireEvent.click(screen.getByLabelText('Clear day filter'));
+    expect(titles()).toHaveLength(2);
+
+    // Eintrag antippen: ändern, Zurück führt in die Liste (mit erhaltener Suche)
+    fireEvent.change(screen.getByLabelText('Search entries'), { target: { value: 'night' } });
+    fireEvent.click(document.querySelector('.entry')!);
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Pasta night' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(titles()).toEqual(['Pasta night']);
+    expect((screen.getByLabelText('Search entries') as HTMLInputElement).value).toBe('night'); // Suche bleibt erhalten
+  });
+
+  it('Stats: Bilanz, Budgets mit Fortschritt, Ausgaben nach Kategorie, letzte Monate', () => {
+    render(<App />);
+    seedEntries();
+    openMoneySection('Stats');
+    const stats = () => document.querySelector('[data-money="stats"]')!;
+    expect(stats().querySelector('.net b')!.textContent).toBe('€ 1.950,00');
+    expect(stats().querySelector('.net em')!.textContent).toMatch(/Saved 98% of income/);
+    expect(stats().querySelectorAll('.bars .barcol')).toHaveLength(6);
+    expect(stats().querySelector('.legend')!.textContent).toMatch(/food.*100%.*€ 50,00/);
+
+    // Budget anlegen: 100 € für food, davon 50 € ausgegeben
+    fireEvent.click(screen.getByRole('button', { name: 'Budget' }));
+    fireEvent.change(screen.getByLabelText('Budget category'), { target: { value: 'food' } });
+    fireEvent.change(screen.getByLabelText('Monthly limit'), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    const bar50 = screen.getByRole('progressbar', { name: 'Budget food' });
+    expect(bar50.getAttribute('aria-valuenow')).toBe('50');
+    expect(stats().querySelector('.budget')!.textContent).toMatch(/€ 50,00 of € 100,00.*50%.*€ 50,00 left/);
+    expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toEqual([{ category: 'food', limit: 10000 }]);
+
+    // Limit senken: Budget überschritten
+    fireEvent.click(screen.getByLabelText('Edit budget food'));
+    fireEvent.change(screen.getByLabelText('Limit for food'), { target: { value: '40' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(stats().querySelector('.budget')!.classList.contains('over')).toBe(true);
+    expect(stats().querySelector('.budgetfoot')!.textContent).toMatch(/€ 10,00 over/);
+
+    // Entfernen per Doppeltipp
+    fireEvent.click(screen.getByLabelText('Edit budget food'));
+    fireEvent.click(screen.getByLabelText('Remove budget food'));
+    expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toHaveLength(1);
+    fireEvent.click(screen.getByLabelText('Remove budget food'));
+    expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toEqual([]);
+  });
 });

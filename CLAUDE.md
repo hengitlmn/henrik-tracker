@@ -12,8 +12,8 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 - `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
 - `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
 - `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView`, `SettingsView` (Übersicht) mit
-  `HabitsSettings` und `DataSettings`, `MoneyView` (Konten, Kontoseite) mit `EntryForm`, `MoneySettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
-- `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `money.ts` (Salden, Format, Betrag lesen, Prüfung), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
+  `HabitsSettings` und `DataSettings`, `MoneyView` (Konten, Kontoseite) mit `EntryForm`, `EntryDays` (Einträge nach Tagen), `MoneyStats`, `MoneyCalendar`, `MonthNav`, `MoneySettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
+- `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `money.ts` (Salden, Format, Betrag lesen, Prüfung), `stats.ts` (Monatssummen, Kategorien, Suche), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
 - `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
 - `src/**/*.test.ts(x)`: Tests (jsdom). `src/test-setup.ts` leert `localStorage` nach jedem Test.
 - `public/`: nur die Icons (`icon-180/192/512.png`). Manifest und Service Worker erzeugt der Build.
@@ -54,7 +54,8 @@ Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true }, col
 
 To-dos: eigener Schlüssel `todos-v1`, Array von `{ id: string, title: string, completedAt?: ISO-Zeitpunkt }` (kein `completedAt` = offen).
 
-Money: eigener Schlüssel `money-v1`, `{ groups: [{id,name}], accounts: [{id,groupId,name,start}], entries: [{id,type:"income"|"expense"|"transfer",date:"YYYY-MM-DD",accountId,toAccountId?,category?,amount,note?}], categories: {income:[],expense:[]} }`.
+Money: eigener Schlüssel `money-v1`, `{ groups: [{id,name}], accounts: [{id,groupId,name,start}], entries: [{id,type:"income"|"expense"|"transfer",date:"YYYY-MM-DD",accountId,toAccountId?,category?,amount,note?}], categories: {income:[],expense:[]}, budgets: [{category,limit}] }`.
+`budgets` (Monatslimit je Ausgaben-Kategorie, Cent, eins pro Kategorie) ist neu und optional: fehlt es, gilt eine leere Liste.
 Alle Beträge in Cent (ganze Zahlen, `amount` immer positiv). Kontostand = `start` + Einträge (Überweisung: Quelle minus, Ziel plus).
 Anzeige deutsch (`€ 1.057,60`), Eingabe `12,5` oder `12.50`. Ungültige Teile fallen beim Laden/Import weg (`parseMoney`).
 
@@ -97,8 +98,14 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     Monatswechsel auch per Wischen (wie die Woche im Kalender). Plus-Button hängt per Portal an `document.body`
     (sonst verschiebt die Einblend-Animation der Ansicht das `position: fixed`).
     Doppeltipp auf das Money-Icon: kleines Glas-Menü über dem Icon mit Accounts / Stats / Calendar (Bereiche innerhalb
-    des Money-Tabs); Stats und Calendar sind noch leer, nur die Überschrift steht oben.
-    Noch nicht gebaut: Stats-Inhalt, Calendar-Inhalt, Budget, Wiederholungen, Fotos, Konten ausblenden/sortieren, Gebühren bei Überweisungen.
+    des Money-Tabs).
+    Stats (Monat mit ‹ › und Wischen): Net-Karte (Income/Expense/Entries, Sparquote), Budgets je Kategorie mit Fortschrittsbalken
+    (blau, ab 80 % gelb, über 100 % rot; Tipp = Limit ändern/entfernen, "+ Budget" unten), Kreisdiagramm der Ausgaben nach
+    Kategorie mit Legende, Balken Income/Expense der letzten 6 Monate. Überweisungen zählen nicht als Einnahme/Ausgabe.
+    Calendar: alle Einträge aller Konten untereinander, neueste Tage oben, im Stil der Kontoseite; fester Kopf mit Suche
+    (alle Wörter müssen passen: Notiz, Kategorie, Konto, Typ, Betrag, Tag wie `08.10.`, `2026-10`, `Thu`, `October`)
+    und Tagesfilter (Kalender-Knopf); Tipp auf einen Eintrag öffnet ihn zum Ändern.
+    Noch nicht gebaut: Budget pro Konto/Jahr, Wiederholungen, Fotos, Konten ausblenden/sortieren, Gebühren bei Überweisungen.
   - Settings ist kein Tab mehr: Lange auf die Leiste drücken (350 ms). Die Leiste gibt kurz nach (`squish`) und spuckt
     wie ein Wassertropfen ein kleines Glas-Menü "Settings" nach oben aus (Dehnen/Stauchen, ohne Zusatzblase,
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings

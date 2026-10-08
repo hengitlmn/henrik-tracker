@@ -1,10 +1,17 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { CSSProperties, MouseEvent, PointerEvent } from 'react';
+import type { CSSProperties } from 'react';
 import type { Money, MoneyEntry, MoneySection } from '../types';
-import { MONTHS_EN, WEEKDAYS_SHORT, pad, parseKey } from '../lib/dates';
-import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, totals } from '../lib/money';
+import { parseKey } from '../lib/dates';
+import { useMonthPager } from '../hooks';
+import type { Month } from '../hooks';
+import { monthPrefix } from '../lib/stats';
+import { accountBalance, entryEffect, formatMoney, formatNumber, groupTotal, newestFirst, totals } from '../lib/money';
+import { EntryDays } from './EntryDays';
 import { EntryForm } from './EntryForm';
+import { MonthNav } from './MonthNav';
+import { MoneyCalendar } from './MoneyCalendar';
+import { MoneyStats } from './MoneyStats';
 
 interface Props {
   money: Money;
@@ -36,13 +43,13 @@ export function MoneyView({ money, update, today, section, sectionAnim }: Props)
   };
 
   if (section !== 'accounts') {
-    // Stats und Calendar: bewusst noch leer, nur die Überschrift steht schon oben
-    const title = section === 'stats' ? 'Stats' : 'Calendar';
     return (
       <div key={section} className="view-in" style={{ '--dx': '28px' } as CSSProperties} data-money={section}>
-        <div className="sticky-top">
-          <h1 className="page-title">{title}</h1>
-        </div>
+        {section === 'stats' ? (
+          <MoneyStats money={money} update={update} month={month} setMonth={setMonth} />
+        ) : (
+          <MoneyCalendar money={money} update={update} today={today} />
+        )}
       </div>
     );
   }
@@ -121,79 +128,23 @@ function AccountList({ money, onOpen }: { money: Money; onOpen: (id: string) => 
 interface AccountPageProps {
   money: Money;
   accountId: string;
-  month: { y: number; m: number };
-  setMonth: (m: { y: number; m: number }) => void;
+  month: Month;
+  setMonth: (m: Month) => void;
   onBack: () => void;
   onAdd: () => void;
   onEdit: (e: MoneyEntry) => void;
 }
 
 function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit }: AccountPageProps) {
-  const areaRef = useRef<HTMLDivElement>(null);
-  const [slide, setSlide] = useState({ n: 0, dir: 0 });
+  const { shift, swipeProps } = useMonthPager(month, setMonth);
   const account = money.accounts.find((a) => a.id === accountId);
-  const name = (id?: string) => money.accounts.find((a) => a.id === id)?.name ?? '?';
-  const prefix = month.y + '-' + pad(month.m + 1);
-  const inMonth = money.entries
-    .map((e, i) => ({ e, i }))
-    .filter(({ e }) => (e.accountId === accountId || e.toAccountId === accountId) && e.date.startsWith(prefix))
-    .sort((a, b) => (a.e.date === b.e.date ? b.i - a.i : a.e.date < b.e.date ? 1 : -1))
-    .map(({ e }) => e);
+  const prefix = monthPrefix(month.y, month.m);
+  const inMonth = newestFirst(
+    money.entries.filter((e) => (e.accountId === accountId || e.toAccountId === accountId) && e.date.startsWith(prefix)),
+  );
 
   const deposit = inMonth.reduce((s, e) => s + Math.max(0, entryEffect(e, accountId)), 0);
   const withdrawal = inMonth.reduce((s, e) => s + Math.max(0, -entryEffect(e, accountId)), 0);
-
-  const days: { date: string; entries: MoneyEntry[] }[] = [];
-  for (const e of inMonth) {
-    const last = days[days.length - 1];
-    if (last && last.date === e.date) last.entries.push(e);
-    else days.push({ date: e.date, entries: [e] });
-  }
-
-  const shift = (delta: number) => {
-    const d = new Date(month.y, month.m + delta, 1);
-    setMonth({ y: d.getFullYear(), m: d.getMonth() });
-    setSlide((s) => ({ n: s.n + 1, dir: delta > 0 ? 1 : -1 }));
-  };
-
-  // neuer Monat gleitet von der Seite herein
-  useLayoutEffect(() => {
-    const root = areaRef.current;
-    if (!root || !slide.n) return;
-    root.querySelectorAll<HTMLElement>('[data-slide]').forEach((el) => {
-      el.style.setProperty('--wdx', slide.dir * 28 + 'px');
-      el.classList.remove('week-in');
-      void el.offsetWidth;
-      el.classList.add('week-in');
-    });
-  }, [slide.n, slide.dir]);
-
-  // Wischen wechselt den Monat (wie die Woche im Kalender)
-  const swipe = useRef({ tracking: false, x: 0, y: 0, swallow: false });
-  const onPointerDown = (e: PointerEvent) => {
-    if (e.button) return;
-    swipe.current.tracking = true;
-    swipe.current.x = e.clientX;
-    swipe.current.y = e.clientY;
-  };
-  const onPointerUp = (e: PointerEvent) => {
-    const s = swipe.current;
-    if (!s.tracking) return;
-    s.tracking = false;
-    const dx = e.clientX - s.x;
-    const dy = e.clientY - s.y;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      s.swallow = true; // das Loslassen soll keinen Eintrag öffnen
-      setTimeout(() => { s.swallow = false; }, 60);
-      shift(dx < 0 ? 1 : -1); // nach links wischen = nächster Monat
-    }
-  };
-  const onClickCapture = (e: MouseEvent) => {
-    if (swipe.current.swallow) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-  };
 
   if (!account) return null;
 
@@ -208,61 +159,20 @@ function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit 
         <span />
       </div>
 
-      <div
-        ref={areaRef}
-        className="swipearea"
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => { swipe.current.tracking = false; }}
-        onClickCapture={onClickCapture}
-      >
-      <div className="monthnav" data-slide>
-        <button type="button" aria-label="Previous month" onClick={() => shift(-1)}>‹</button>
-        <span>{MONTHS_EN[month.m].slice(0, 3)} {month.y}</span>
-        <button type="button" aria-label="Next month" onClick={() => shift(1)}>›</button>
-      </div>
+      <div {...swipeProps}>
+        <MonthNav month={month} shift={shift} />
 
-      <div className="sum" data-slide>
-        <span>Income<b className="pos">{formatNumber(deposit)}</b></span>
-        <span>Expense<b className="neg">{formatNumber(withdrawal)}</b></span>
-        <span>Total<b>{formatNumber(deposit - withdrawal)}</b></span>
-        <span>Balance<b className="muted">{formatNumber(accountBalance(money, accountId))}</b></span>
-      </div>
+        <div className="sum" data-slide>
+          <span>Income<b className="pos">{formatNumber(deposit)}</b></span>
+          <span>Expense<b className="neg">{formatNumber(withdrawal)}</b></span>
+          <span>Total<b>{formatNumber(deposit - withdrawal)}</b></span>
+          <span>Balance<b className="muted">{formatNumber(accountBalance(money, accountId))}</b></span>
+        </div>
 
-      <div data-slide>
-      {days.map(({ date, entries }) => {
-        const d = parseKey(date);
-        const inc = entries.reduce((s, e) => s + Math.max(0, entryEffect(e, accountId)), 0);
-        const exp = entries.reduce((s, e) => s + Math.max(0, -entryEffect(e, accountId)), 0);
-        return (
-          <section key={date} className="daygroup">
-            <div className="dayhead">
-              <b>{pad(d.getDate())}</b>
-              <span className="wd">{WEEKDAYS_SHORT[d.getDay()]}</span>
-              <span className="my">{pad(d.getMonth() + 1)}.{d.getFullYear()}</span>
-              <span className="pos">{inc ? formatMoney(inc) : ''}</span>
-              <span className="neg">{exp ? formatMoney(exp) : ''}</span>
-            </div>
-            <div className="acc-card">
-              {entries.map((e) => {
-                const fx = entryEffect(e, accountId);
-                return (
-                  <button key={e.id} type="button" className="entry" aria-label={'Edit entry ' + (e.note || e.category || 'transfer')} onClick={() => onEdit(e)}>
-                    <span className="cat">{e.type === 'transfer' ? 'Transfer' : e.category ?? ''}</span>
-                    <span className="what">
-                      <b>{e.note || (e.type === 'transfer' ? 'Transfer' : e.category || (e.type === 'income' ? 'Income' : 'Expense'))}</b>
-                      <i>{e.type === 'transfer' ? name(e.accountId) + ' → ' + name(e.toAccountId) : account.name}</i>
-                    </span>
-                    <span className={'amt ' + (fx < 0 ? 'neg' : 'pos')}>{formatMoney(Math.abs(fx))}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
-      {days.length === 0 && <p className="hint">No entries this month.</p>}
-      </div>
+        <div data-slide>
+          <EntryDays entries={inMonth} money={money} accountId={accountId} onEdit={onEdit} />
+          {inMonth.length === 0 && <p className="hint">No entries this month.</p>}
+        </div>
       </div>
 
       {/* über document.body, damit "fixed" nicht an der Einblend-Animation der Ansicht hängt */}

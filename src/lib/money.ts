@@ -14,6 +14,7 @@ export function emptyMoney(): Money {
     accounts: [],
     entries: [],
     categories: { income: [...DEFAULT_CATEGORIES.income], expense: [...DEFAULT_CATEGORIES.expense] },
+    budgets: [],
   };
 }
 
@@ -75,7 +76,23 @@ export function parseMoney(raw: unknown): Money | null {
     income: strList(cats.income, DEFAULT_CATEGORIES.income),
     expense: strList(cats.expense, DEFAULT_CATEGORIES.expense),
   };
+  const seen = new Set<string>();
+  for (const b of arr(r.budgets) as { category?: unknown; limit?: unknown }[]) {
+    if (!b || typeof b.category !== 'string' || !b.category.trim() || !isCents(b.limit) || b.limit <= 0) continue;
+    const category = b.category.trim().slice(0, 30);
+    if (seen.has(category)) continue;
+    seen.add(category);
+    money.budgets.push({ category, limit: b.limit });
+  }
   return money;
+}
+
+/** Neueste zuerst; bei gleichem Datum der später angelegte Eintrag zuerst */
+export function newestFirst(entries: MoneyEntry[]): MoneyEntry[] {
+  return entries
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => (a.e.date === b.e.date ? b.i - a.i : a.e.date < b.e.date ? 1 : -1))
+    .map(({ e }) => e);
 }
 
 /** Änderung eines Kontos durch einen Eintrag (in Cent) */

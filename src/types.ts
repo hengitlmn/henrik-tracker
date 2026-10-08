@@ -49,9 +49,16 @@ export interface MoneyEntry {
   note?: string;
 }
 
+/** Monatsbudget für eine Ausgaben-Kategorie (Cent) */
+export interface MoneyBudget {
+  category: string;
+  limit: number;
+}
+
 export interface Money {
   groups: MoneyGroup[];
   accounts: MoneyAccount[];
   entries: MoneyEntry[];
   categories: { income: string[]; expense: string[] };
+  budgets: MoneyBudget[];
 }
