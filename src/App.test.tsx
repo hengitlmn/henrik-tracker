@@ -533,7 +533,7 @@ describe('Money', () => {
     setupAccounts();
     closeSettings();
     fireEvent.click(tab('Money'));
-    expect(document.querySelector('.totals')!.textContent).toMatch(/Networth100,50.*Income · Day0,00.*Expense · Day0,00/);
+    expect(document.querySelector('.totals')!.textContent).toMatch(/Networth100,50.*\+ Month0,00.*- Month0,00/);
     expect(document.querySelector('.grouphead')!.textContent).toMatch(/Cash.*€ 100,50/);
     fireEvent.click(screen.getByRole('button', { name: /Wallet/ }));
     expect(document.querySelector('.subhead h1')!.textContent).toBe('Wallet');
@@ -756,7 +756,7 @@ describe('Money', () => {
     expect(JSON.parse(localStorage.getItem('money-v1')!).budgets).toEqual([]);
   });
 
-  it('Kontenübersicht: Networth links, Income und Expense wechseln gemeinsam den Zeitraum', () => {
+  it('Kontenübersicht: Networth, + Month und - Month, alle drei schalten Income und Expense gemeinsam um', () => {
     const d = (n: number) => { const x = new Date(); x.setDate(x.getDate() - n); return keyOf(x); };
     localStorage.setItem('money-v1', JSON.stringify({
       groups: [{ id: 'g', name: 'G' }],
@@ -773,19 +773,17 @@ describe('Money', () => {
     fireEvent.click(tab('Money'));
     expect(document.querySelector('h1')).toBeNull(); // keine Überschrift "Accounts" mehr
     const cells = () => [...document.querySelectorAll('.totals .tot')].map((c) => c.textContent);
-    expect(cells()).toEqual(['Networth525,00', 'Income · Day+100,00', 'Expense · Day-25,00']);
-    // Tipp auf Income schaltet beide weiter
-    fireEvent.click(document.querySelectorAll('.totals .per')[0]);
-    expect(cells().slice(1)).toEqual(['Income · Week+100,00', 'Expense · Week-35,00']);
-    // Tipp auf Expense schaltet ebenfalls beide weiter
-    fireEvent.click(document.querySelectorAll('.totals .per')[1]);
-    expect(cells().slice(1)).toEqual(['Income · Month+600,00', 'Expense · Month-35,00']);
-    fireEvent.click(document.querySelectorAll('.totals .per')[1]);
-    expect(cells()[1]).toMatch(/^Income · YTD/);
-    fireEvent.click(document.querySelectorAll('.totals .per')[0]);
-    expect(cells()[2]).toMatch(/^Expense · Year/);
-    fireEvent.click(document.querySelectorAll('.totals .per')[0]);
-    expect(cells().slice(1)).toEqual(['Income · Day+100,00', 'Expense · Day-25,00']); // zurück zum Anfang
+    const press = (i: number) => fireEvent.click(document.querySelectorAll('.totals .tot')[i]);
+    expect(cells()).toEqual(['Networth525,00', '+ Month600,00', '- Month35,00']); // Ausgangslage: Month
+    press(1); // Income: weiter zu YTD
+    expect(cells()[1]).toMatch(/^\+ YTD/);
+    expect(cells()[2]).toMatch(/^- YTD/);
+    press(2); // Expense: weiter zu Year
+    expect(cells()[1]).toMatch(/^\+ Year/);
+    press(0); // Networth schaltet ebenfalls weiter und bleibt selbst gleich
+    expect(cells()).toEqual(['Networth525,00', '+ Day100,00', '- Day25,00']);
+    press(0);
+    expect(cells()).toEqual(['Networth525,00', '+ Week100,00', '- Week35,00']);
     expect(document.querySelector('.totals')!.textContent).not.toMatch(/Assets|Liabilities|Saved/);
   });
 });

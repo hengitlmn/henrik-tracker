@@ -86,13 +86,14 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   iPhone, bewusst tief), aktiver Tab mit runder Hinterlegung, die beim Wechsel gleitet. Ein einfacher Tipp lässt sie schneller
   rübergleiten. Man kann mit dem Finger über die Leiste ziehen (ab ca. 6 px Bewegung), die Hinterlegung folgt, Loslassen wählt den Tab. Beim Tab-Wechsel blendet die Ansicht
   kurz ein (leichter Schub von der Seite):
-  - von links nach rechts: To-do (Haken im Quadrat), Money (Münze mit $), Kalender (Mitte, beim Start aktiv,
+  - von links nach rechts: To-do (Haken im Kreis), Money (Geldschein), Kalender (Mitte, beim Start aktiv,
     Icon ist ein H im Stil des App-Logos), Gym (Hantel), Notes (Notizblatt)
   - Gym und Notes sind bewusst noch leer (für spätere Features)
   - Money-Tab (Vorbild: Money-Manager-App aus den Screenrecordings des Nutzers): fester Kopf ohne Überschrift mit
-    drei Spalten mittig: "Networth" (Gesamtstand aller Konten, weißer Titel, Betrag blau, bei Minus rot), "Income · Day"
-    (blau, mit +) und "Expense · Day" (rot, mit −). Ein Tipp auf Income oder Expense schaltet beide gemeinsam weiter:
-    Day (heute) → Week (7 Tage) → Month (30 Tage) → YTD (seit 1.1.) → Year (365 Tage) → Day. Überweisungen zählen nie
+    drei Spalten mittig: "Networth" (Gesamtstand aller Konten, weißer Titel, Betrag blau, bei Minus rot), "+ Month"
+    (Einnahmen, blau) und "- Month" (Ausgaben, rot). Ein Tipp auf irgendeine der drei Zellen schaltet den Zeitraum von
+    + und - gemeinsam weiter (Networth bleibt gleich): Month ist die Ausgangslage, dann YTD (seit 1.1.) → Year (365 Tage) →
+    Day (heute) → Week (7 Tage) → Month (30 Tage). Überweisungen zählen nie
     (Assets/Liabilities und Saved gibt es nicht mehr),
     darunter Abschnitte (Gruppen) als Kopfzeile mit Summe (blau, negativ rot) und
     Konten als Zeilen in einer Karte. Tipp auf ein Konto: Kontoseite mit "‹ Accounts", Monatswahl, Deposit /

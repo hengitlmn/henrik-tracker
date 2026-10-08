@@ -24,8 +24,8 @@ const ICONS: Record<Tab, { label: string; icon: ReactNode }> = {
     label: 'To-do',
     icon: (
       <Icon>
-        <rect x="4" y="4" width="16" height="16" rx="4.5" />
-        <path d="M8.5 12.3l2.4 2.4 4.6-5" />
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M8.5 12.2l2.4 2.4 4.6-5" />
       </Icon>
     ),
   },
@@ -33,9 +33,8 @@ const ICONS: Record<Tab, { label: string; icon: ReactNode }> = {
     label: 'Money',
     icon: (
       <Icon>
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="M14.6 9.4c-.5-1-1.5-1.5-2.6-1.5-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2.1 2.6.9 2.6 2.1-1.1 2-2.6 2c-1.1 0-2.1-.5-2.6-1.5" />
-        <path d="M12 6.4v1.5M12 16.1v1.5" />
+        <rect x="3.5" y="6.5" width="17" height="11" rx="3" />
+        <circle cx="12" cy="12" r="2.4" />
       </Icon>
     ),
   },
@@ -74,9 +73,8 @@ const MONEY_SECTIONS: { id: MoneySection; label: string; icon: ReactNode }[] = [
     label: 'Accounts',
     icon: (
       <>
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="M14.6 9.4c-.5-1-1.5-1.5-2.6-1.5-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2.1 2.6.9 2.6 2.1-1.1 2-2.6 2c-1.1 0-2.1-.5-2.6-1.5" />
-        <path d="M12 6.4v1.5M12 16.1v1.5" />
+        <rect x="3.5" y="6.5" width="17" height="11" rx="3" />
+        <circle cx="12" cy="12" r="2.4" />
       </>
     ),
   },

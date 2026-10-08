@@ -35,7 +35,7 @@ const tone = (cents: number) => (cents < 0 ? 'neg' : 'pos');
 export function MoneyView({ money, update, today, section, sectionAnim }: Props) {
   const [view, setView] = useState<View>({ kind: 'list' });
   const [dx, setDx] = useState(0);
-  const [period, setPeriod] = useState<Period>('day');
+  const [period, setPeriod] = useState<Period>('month');
   const [month, setMonth] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }));
 
   const go = (next: View, dir: 1 | -1) => {
@@ -104,15 +104,17 @@ function AccountList({ money, today, period, onPeriod, onOpen }: {
     <>
       <div className="sticky-top">
         <div className="totals">
-          <span className="tot">Networth<b className={tone(total)}>{formatNumber(total)}</b></span>
-          {/* Income und Expense gehören zusammen: ein Tipp auf eine der beiden schaltet beide um */}
+          {/* Ein Tipp auf eine der drei Zellen schaltet den Zeitraum von Income und Expense weiter (Networth bleibt gleich) */}
+          <button type="button" className="tot per" aria-label={'Networth, tap to change the period to ' + next.label} onClick={cycle}>
+            Networth<b className={tone(total)}>{formatNumber(total)}</b>
+          </button>
           <button type="button" className="tot per" aria-label={'Income, ' + label + ', tap for ' + next.label} onClick={cycle}>
-            Income · {label}
-            <b className="pos">{income > 0 ? '+' : ''}{formatNumber(income)}</b>
+            + {label}
+            <b className="pos">{formatNumber(income)}</b>
           </button>
           <button type="button" className="tot per" aria-label={'Expense, ' + label + ', tap for ' + next.label} onClick={cycle}>
-            Expense · {label}
-            <b className="neg">{expense > 0 ? '-' : ''}{formatNumber(expense)}</b>
+            - {label}
+            <b className="neg">{formatNumber(expense)}</b>
           </button>
         </div>
       </div>
