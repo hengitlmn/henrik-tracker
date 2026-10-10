@@ -63,6 +63,7 @@ h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.
 .sticky-top {
   position: sticky; top: 0; z-index: 5;
   margin-top: -34px; padding-top: 34px;   /* gleicht das obere Padding von main aus, Position bleibt gleich */
+  margin-bottom: 14px;                     /* Platz für den Ausblendverlauf, damit der erste Baustein darunter nicht abgedunkelt ist */
   background: var(--bg);
 }
 .sticky-top::after {
