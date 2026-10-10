@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { PointerEvent, ReactNode } from 'react';
 import type { MoneySection, Tab, TodoSection } from '../types';
 
-export const TAB_ORDER: Tab[] = ['todo', 'money', 'cal', 'gym', 'notes'];
+export const TAB_ORDER: Tab[] = ['todo', 'money', 'home', 'habits', 'notes'];
 
 const PAD = 6;
 const GAP = 4;
@@ -38,21 +38,20 @@ const ICONS: Record<Tab, { label: string; icon: ReactNode }> = {
       </Icon>
     ),
   },
-  cal: {
-    label: 'Calendar',
+  home: {
+    label: 'Home',
     icon: (
       <Icon>
         <path d="M6.4 6.9H10L9.4 10.6H14.5L14.1 6.9H17.6L20.4 17.1H15.7L15.1 13.2H9.1L8.6 17.1H3.6Z" fill="currentColor" strokeWidth="1" />
       </Icon>
     ),
   },
-  gym: {
-    label: 'Gym',
+  habits: {
+    label: 'Habits',
     icon: (
       <Icon>
-        <rect x="5" y="7.5" width="2.8" height="9" rx="1.2" />
-        <rect x="16.2" y="7.5" width="2.8" height="9" rx="1.2" />
-        <path d="M7.8 12h8.4M2.8 10v4M21.2 10v4" />
+        <path d="M17 3.5l3 3-3 3M20 6.5H9.5a5.5 5.5 0 0 0-5.5 5.5" />
+        <path d="M7 20.5l-3-3 3-3M4 17.5h10.5a5.5 5.5 0 0 0 5.5-5.5" />
       </Icon>
     ),
   },

@@ -31,7 +31,7 @@ export type TodoSection = 'todos' | 'lists' | 'upcoming';
 
 export type MoneySection = 'accounts' | 'stats' | 'calendar';
 
-export type Tab = 'todo' | 'money' | 'cal' | 'gym' | 'notes';
+export type Tab = 'todo' | 'money' | 'home' | 'habits' | 'notes';
 
 /** Money: alle Beträge in Cent (ganze Zahlen) */
 export type EntryType = 'income' | 'expense' | 'transfer';

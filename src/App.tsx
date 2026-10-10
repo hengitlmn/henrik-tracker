@@ -6,6 +6,7 @@ import { CalendarView } from './components/CalendarView';
 import { SettingsSheet } from './components/SettingsSheet';
 import { SettingsView } from './components/SettingsView';
 import { MoneyView } from './components/MoneyView';
+import { HomeView } from './components/HomeView';
 import { TodoView } from './components/TodoView';
 import { TAB_ORDER, TabBar } from './components/TabBar';
 
@@ -17,7 +18,7 @@ export default function App() {
   const today = useToday();
   const week = useWeekNav();
 
-  const [tab, setTab] = useState<Tab>('cal');
+  const [tab, setTab] = useState<Tab>('home');
   const [moneySection, setMoneySection] = useState<MoneySection>('accounts');
   const [todoSection, setTodoSection] = useState<TodoSection>('todos');
   const [sectionAnim, setSectionAnim] = useState(0);
@@ -68,10 +69,11 @@ export default function App() {
           style={{ '--dx': anim.dx + 'px' } as CSSProperties}
           data-view={tab}
         >
-          {/* gym und notes: bewusst noch leer, Platz für spätere Features */}
+          {/* notes: bewusst noch leer, Platz für spätere Features */}
           {tab === 'money' && <MoneyView money={money} update={updateMoney} today={today} section={moneySection} sectionAnim={sectionAnim} />}
           {tab === 'todo' && <TodoView todos={todos} lists={todoLists} today={today} update={updateTodos} updateLists={updateTodoLists} section={todoSection} />}
-          {tab === 'cal' && (
+          {tab === 'home' && <HomeView habits={habits} todos={todos} money={money} today={today} onOpen={selectTab} />}
+          {tab === 'habits' && (
             <CalendarView
               habits={habits}
               today={today}

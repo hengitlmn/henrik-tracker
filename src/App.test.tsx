@@ -42,23 +42,50 @@ function addHabit(name: string) {
 }
 
 describe('Start und Tabs', () => {
-  it('zeigt fünf Tabs in fester Reihenfolge, Kalender mittig und aktiv, Gym und Notes sind noch leer', () => {
+  it('zeigt fünf Tabs in fester Reihenfolge, Home mittig und aktiv, Habits zeigt den Kalender, Notes ist noch leer', () => {
     render(<App />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['To-do', 'Money', 'Calendar', 'Gym', 'Notes']);
-    expect(tab('Calendar').getAttribute('aria-selected')).toBe('true');
-    for (const [name, view] of [['Gym', 'gym'], ['Notes', 'notes']]) {
-      fireEvent.click(tab(name));
-      expect(tab(name).getAttribute('aria-selected')).toBe('true');
-      expect(document.querySelector(`[data-view="${view}"]`)!.children).toHaveLength(0);
-    }
-    fireEvent.click(tab('Calendar'));
+    expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['To-do', 'Money', 'Home', 'Habits', 'Notes']);
+    expect(tab('Home').getAttribute('aria-selected')).toBe('true');
+    expect(document.querySelector('[data-view="home"] .widgets')).toBeTruthy();
+    fireEvent.click(tab('Notes'));
+    expect(tab('Notes').getAttribute('aria-selected')).toBe('true');
+    expect(document.querySelector('[data-view="notes"]')!.children).toHaveLength(0);
+    fireEvent.click(tab('Habits'));
     expect(screen.getByLabelText('Back to current week')).toBeTruthy();
+  });
+
+  it('Home zeigt Networth, Ausgaben, heutige To-dos, Habit-Ringe und die Notiz als Widgets; Tipp öffnet den Bereich', () => {
+    const t = keyOf(new Date());
+    localStorage.setItem('habits-v1', JSON.stringify([
+      { id: 'a', name: 'Run', done: { [t]: true } },
+      { id: 'b', name: 'Read', done: {} },
+    ]));
+    localStorage.setItem('todos-v1', JSON.stringify([
+      { id: 't1', title: 'Call mom', date: t }, { id: 't2', title: 'Buy milk', date: t },
+    ]));
+    localStorage.setItem('money-v1', JSON.stringify({
+      groups: [{ id: 'g', name: 'Cash' }],
+      accounts: [{ id: 'k', groupId: 'g', name: 'Wallet', start: 100000 }],
+      entries: [{ id: 'e', type: 'expense', date: t, accountId: 'k', amount: 2550 }],
+      categories: { income: [], expense: [] }, budgets: [],
+    }));
+    render(<App />);
+    const w = (name: string) => screen.getByRole('button', { name }) as HTMLElement;
+    expect(w('Networth').textContent).toContain('€ 974,50');
+    expect(w('Spent').textContent).toContain('€ 25,50');
+    expect(w('To-dos today').textContent).toMatch(/Call mom.*Buy milk.*2 open/);
+    expect(w('Habits today').textContent).toContain('1/2');
+    expect(w('Habits this week').textContent).toMatch(/\d+%$/); // Wert hängt vom Wochentag ab (lib/home.test.ts prüft die Rechnung)
+    expect(w('Last note').textContent).toContain('No notes yet.');
+    fireEvent.click(w('To-dos today'));
+    expect(tab('To-do').getAttribute('aria-selected')).toBe('true');
   });
 
   it('Kopf, Datum und Wochenzeile liegen im festen Bereich, die Karten außerhalb', () => {
     localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
     render(<App />);
+    fireEvent.click(tab('Habits'));
     const top = document.querySelector('.sticky-top')!;
     expect(top.querySelector('.head')).toBeTruthy();
     expect(top.querySelector('.nav')).toBeTruthy();
@@ -69,6 +96,7 @@ describe('Start und Tabs', () => {
 
   it('zeigt ohne Gewohnheit sofort die Wochenzeile und keinen Leertext', () => {
     render(<App />);
+    fireEvent.click(tab('Habits'));
     expect(document.body.textContent).not.toMatch(/Noch keine|No habits yet/);
     const cells = [...document.querySelectorAll('.week span')];
     expect(cells.map((c) => c.querySelector('i')!.textContent).join('')).toBe('MTWTFSS');
@@ -106,7 +134,7 @@ describe('Einstellungen', () => {
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toBeTruthy();
     fireEvent.pointerUp(bar(), { clientX: 280, pointerId: 1 });
     vi.useRealTimers();
-    expect(tab('Calendar').getAttribute('aria-selected')).toBe('true'); // langes Drücken wählt keinen Tab
+    expect(tab('Home').getAttribute('aria-selected')).toBe('true'); // langes Drücken wählt keinen Tab
     expect(sheet()).toBeNull();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Settings' }));
     expect(screen.queryByRole('menuitem')).toBeNull();
@@ -186,6 +214,7 @@ describe('Habits-Einstellungen', () => {
 
   it('jede Gewohnheit ist eine Karte mit Farbwahl, die Farbe färbt die abgehakten Kreise', () => {
     render(<App />);
+    fireEvent.click(tab('Habits'));
     addHabit('Water');
     const card = sheet().querySelector('.list li') as HTMLElement;
     const group = within(card).getByRole('radiogroup', { name: 'Color for Water' });
@@ -513,6 +542,7 @@ describe('To-do-Tab', () => {
 describe('Wochen', () => {
   it('blättert vor und zurück, auch in die Zukunft, und springt per Datum zurück', () => {
     render(<App />);
+    fireEvent.click(tab('Habits'));
     const base = weekNumber();
     const next = screen.getByLabelText('Next week');
     expect((next as HTMLButtonElement).disabled).toBe(false);
@@ -531,6 +561,7 @@ describe('Wochen', () => {
 
   it('Wischen im Wochenbereich wechselt die Woche', () => {
     render(<App />);
+    fireEvent.click(tab('Habits'));
     const area = document.querySelector('.weekarea')!;
     const base = weekNumber();
     const swipe = (x1: number, y1: number, x2: number, y2: number) => {
@@ -550,6 +581,7 @@ describe('Wochen', () => {
 describe('Gewohnheiten', () => {
   it('legt in den Einstellungen an, hakt heute ab und entfernt per Doppeltipp', () => {
     render(<App />);
+    fireEvent.click(tab('Habits'));
     addHabit('Water');
     addHabit('Read');
     expect(sheet().querySelectorAll('.list li')).toHaveLength(2);
@@ -584,6 +616,7 @@ describe('Gewohnheiten', () => {
   it('ein Wisch hakt keinen Kreis aus Versehen ab', () => {
     localStorage.setItem('habits-v1', JSON.stringify([{ id: 'a', name: 'Run', done: {} }]));
     render(<App />);
+    fireEvent.click(tab('Habits'));
     const area = document.querySelector('.weekarea')!;
     const dot = document.querySelector('.list .dot.today') as HTMLButtonElement;
     fireEvent.pointerDown(area, { clientX: 250, clientY: 100, pointerId: 3 });
@@ -608,7 +641,7 @@ describe('Tab-Leiste', () => {
     expect(tab('Money').getAttribute('aria-selected')).toBe('true');
     fireEvent.pointerDown(bar(), { clientX: 215, pointerId: 1 });
     fireEvent.pointerUp(bar(), { clientX: 215, pointerId: 1 });
-    expect(tab('Gym').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Habits').getAttribute('aria-selected')).toBe('true');
   });
 
   it('Ziehen: Hover folgt dem Finger, Loslassen wählt den Tab', () => {
@@ -617,10 +650,10 @@ describe('Tab-Leiste', () => {
     expect(bar().classList.contains('dragging')).toBe(false); // erst ab 6 px
     fireEvent.pointerMove(bar(), { clientX: 160, pointerId: 1 });
     expect(bar().classList.contains('dragging')).toBe(true);
-    expect(tab('Calendar').classList.contains('hover')).toBe(true);
+    expect(tab('Home').classList.contains('hover')).toBe(true);
     fireEvent.pointerMove(bar(), { clientX: 290, pointerId: 1 });
     expect(tab('Notes').classList.contains('hover')).toBe(true);
-    expect(tab('Calendar').classList.contains('hover')).toBe(false);
+    expect(tab('Home').classList.contains('hover')).toBe(false);
     fireEvent.pointerUp(bar(), { clientX: 290, pointerId: 1 });
     expect(tab('Notes').getAttribute('aria-selected')).toBe('true');
     expect(bar().classList.contains('dragging')).toBe(false);
@@ -631,7 +664,7 @@ describe('Tab-Leiste', () => {
     fireEvent.pointerDown(bar(), { clientX: 150, pointerId: 1 });
     fireEvent.pointerMove(bar(), { clientX: 20, pointerId: 1 });
     fireEvent.pointerCancel(bar(), { pointerId: 1 });
-    expect(tab('Calendar').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Home').getAttribute('aria-selected')).toBe('true');
     expect(bar().classList.contains('dragging')).toBe(false);
   });
 });

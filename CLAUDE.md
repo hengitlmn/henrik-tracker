@@ -11,9 +11,9 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 - `src/main.tsx`: Einstieg, Zoom-Sperre (Gesten-Events), Service-Worker-Registrierung
 - `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
 - `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
-- `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView` (Tag), `TodoLists`, `TodoRow` (Wischen), `TodoSheet` (Fenster), `DayPicker`, `SettingsView` (Übersicht) mit
+- `src/components/`: `HomeView` (Widgets), `CalendarView` (Habits-Tab: Kopf, Wochenzeile, Karten, Wischen), `TodoView` (Tag), `TodoLists`, `TodoRow` (Wischen), `TodoSheet` (Fenster), `DayPicker`, `SettingsView` (Übersicht) mit
   `HabitsSettings` und `DataSettings`, `MoneyView` (Konten, Kontoseite) mit `EntryForm`, `EntryDays` (Einträge nach Tagen), `MoneyStats`, `MoneyCalendar`, `MonthNav`, `MoneySettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
-- `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `money.ts` (Salden, Format, Betrag lesen, Prüfung), `stats.ts` (Monatssummen, Kategorien, Suche), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
+- `src/lib/`: `home.ts` (Habit-Zusammenfassung für Home), `dates.ts` (Woche, ISO-Woche, Streak), `money.ts` (Salden, Format, Betrag lesen, Prüfung), `stats.ts` (Monatssummen, Kategorien, Suche), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
 - `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
 - `src/**/*.test.ts(x)`: Tests (jsdom). `src/test-setup.ts` leert `localStorage` nach jedem Test.
 - `public/`: nur die Icons (`icon-180/192/512.png`). Manifest und Service Worker erzeugt der Build.
@@ -88,9 +88,11 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   iPhone, bewusst tief), aktiver Tab mit runder Hinterlegung, die beim Wechsel gleitet. Ein einfacher Tipp lässt sie schneller
   rübergleiten. Man kann mit dem Finger über die Leiste ziehen (ab ca. 6 px Bewegung), die Hinterlegung folgt, Loslassen wählt den Tab. Beim Tab-Wechsel blendet die Ansicht
   kurz ein (leichter Schub von der Seite):
-  - von links nach rechts: To-do (Haken im Kreis), Money (Geldschein), Kalender (Mitte, beim Start aktiv,
-    Icon ist ein H im Stil des App-Logos), Gym (Hantel), Notes (Notizblatt)
-  - Gym und Notes sind bewusst noch leer (für spätere Features)
+  - von links nach rechts: To-do (Haken im Kreis), Money (Geldschein), Home (Mitte, beim Start aktiv,
+    Icon ist ein H im Stil des App-Logos), Habits (zwei Kreispfeile = Wiederholung; zeigt die frühere Kalenderansicht mit Wochenzeile und Gewohnheits-Karten), Notes (Notizblatt)
+  - Notes ist bewusst noch leer (für spätere Features)
+  - Home: Übersicht als Widgets im Stil der iOS-Homescreen-Widgets (abgerundete Kästen `--bar`, zwei Spalten, einzelne über die ganze Breite). Kopf: Wochentag groß, Datum klein.
+    Networth | Spent (Ausgaben der letzten 30 Tage, darunter Einnahmen) · To-dos today (ganze Breite, bis 4 offene Titel, "+N more") · Habits today (Ring, x/y) | Habits this week (Ring, Prozent Montag bis heute) · Last note (ganze Breite, solange es keine Notizen gibt: "No notes yet."). Tipp auf ein Widget öffnet den jeweiligen Tab.
   - Money-Tab (Vorbild: Money-Manager-App aus den Screenrecordings des Nutzers): fester Kopf ohne Überschrift mit
     drei Spalten mittig: "Networth" (Gesamtstand aller Konten, weißer Titel, Betrag blau, bei Minus rot), "+ Month"
     (Einnahmen, blau) und "- Month" (Ausgaben, rot). Ein Tipp auf irgendeine der drei Zellen schaltet den Zeitraum von
@@ -155,6 +157,6 @@ Umzug von Netlify: einmal Daten sichern, neue Adresse hinzufügen, wiederherstel
 
 ## Offene Punkte / Ideen
 
-- Money-, Gym- und Notes-Tab sind leer, Inhalt noch offen.
+- Notes-Tab ist leer, Inhalt noch offen (das Home-Widget "Last note" zeigt dann die zuletzt geöffnete Notiz).
 - Echtes Gerätetesten steht aus: Zoom-Sperre, Schrift (Archivo Black), Teilen-Menü bei "Als Datei sichern",
   Offline-Start. Bei Problemen zuerst dort prüfen.

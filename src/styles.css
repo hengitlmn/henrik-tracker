@@ -509,6 +509,26 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .dp-day.sel { background: var(--accent); color: #fff; }
 .dp-day.mark::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; opacity: .55; }
 
+/* Home: Widgets */
+.todohead.home { justify-content: flex-start; }
+.widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 4px; }
+.widget {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-width: 0;
+  aspect-ratio: 1; padding: 16px; border-radius: 24px; background: var(--bar); text-align: left; overflow: hidden;
+}
+.widget:active { opacity: .75; }
+.widget.wide { grid-column: 1 / -1; aspect-ratio: auto; min-height: 112px; justify-content: flex-start; }
+.w-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.w-value { margin-top: auto; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-sub { font-size: 12px; font-weight: 600; color: var(--muted); }
+.w-empty { margin-top: 6px; font-size: 15px; font-weight: 600; color: var(--muted); }
+.w-todos { display: flex; flex-direction: column; gap: 7px; margin: 2px 0 2px; }
+.w-todos li, .w-todos li:last-child { border: 0; padding: 0; display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-dot { flex: none; width: 14px; height: 14px; border-radius: 5px; border: 2px solid var(--muted); }
+.ring { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; padding-top: 2px; }
+.ring svg { max-height: 100%; aspect-ratio: 1; }
+.ring-label { position: absolute; inset: 0; display: grid; place-items: center; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* Listen */
 .listrows { padding-top: 2px; }
 .listrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 0; border-bottom: 1px solid var(--line); text-align: left; color: var(--muted); }
