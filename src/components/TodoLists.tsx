@@ -19,7 +19,7 @@ interface Props {
 /** Seite "Lists": Übersicht aller Listen (Inbox + eigene), Tipp öffnet eine Liste mit ihren Aufgaben. */
 export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
   const todayKey = keyOf(today);
-  /** null: Übersicht, 'inbox' oder Listen-Id: geöffnete Liste */
+  /** null: Übersicht, sonst die Id der geöffneten Liste */
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
@@ -29,10 +29,7 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
   const addRef = useRef<HTMLInputElement>(null);
 
   const marks = useMemo(() => markedDays(todos, todayKey), [todos, todayKey]);
-  const inList = (id: string) => (t: Todo) => (id === 'inbox' ? !t.listId : t.listId === id);
-  const listObj = openId && openId !== 'inbox' ? lists.find((l) => l.id === openId) : undefined;
-  const entries = [{ id: 'inbox', name: 'Inbox' }, ...lists];
-  const current = openId ? entries.find((l) => l.id === openId) : undefined;
+  const current = openId ? lists.find((l) => l.id === openId) : undefined;
 
   const addList = (e: FormEvent) => {
     e.preventDefault();
@@ -62,10 +59,11 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
   };
 
   const removeList = () => {
-    if (!listObj) return;
+    if (!current) return;
     if (!armed) { setArmed(true); return; }
-    update((ts) => ts.map((t) => { if (t.listId !== listObj.id) return t; const { listId: _l, ...rest } = t; void _l; return rest; })); // Aufgaben wandern in den Inbox
-    updateLists((ls) => ls.filter((l) => l.id !== listObj.id));
+    // Aufgaben verlieren nur die Zuordnung und bleiben auf ihrem Tag
+    update((ts) => ts.map((t) => { if (t.listId !== current.id) return t; const { listId: _l, ...rest } = t; void _l; return rest; }));
+    updateLists((ls) => ls.filter((l) => l.id !== current.id));
     setArmed(false);
     setOpenId(null);
   };
@@ -78,8 +76,8 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
           <header className="todohead"><h1>Lists</h1></header>
         </div>
         <ul className="listrows">
-          {entries.map((l) => {
-            const count = todos.filter((t) => inList(l.id)(t) && !t.completedAt).length;
+          {lists.map((l) => {
+            const count = todos.filter((t) => t.listId === l.id && !t.completedAt).length;
             return (
               <li key={l.id}>
                 <button type="button" className="listrow" onClick={() => { setOpenId(l.id); setArmed(false); }}>
@@ -93,6 +91,7 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
             );
           })}
         </ul>
+        {lists.length === 0 && !adding && <p className="todoempty">No lists yet. Create one to group your to-dos.</p>}
         {adding ? (
           <form className="listadd" autoComplete="off" onSubmit={addList}>
             <input
@@ -116,7 +115,7 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
   }
 
   // Eine Liste: alle ihre Aufgaben, unabhängig vom Tag
-  const items = todos.filter(inList(current.id));
+  const items = todos.filter((t) => t.listId === current.id);
   const open = items.filter((t) => !t.completedAt);
   const done = items
     .filter((t) => t.completedAt)
@@ -136,7 +135,12 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
   return (
     <div>
       <div className="sticky-top">
-        <button type="button" className="back" onClick={() => setOpenId(null)}>‹ Lists</button>
+        <div className="listbar">
+          <button type="button" className="back" onClick={() => setOpenId(null)}>‹ Lists</button>
+          <button type="button" className={'listdelete' + (armed ? ' armed' : '')} onClick={removeList}>
+            {armed ? 'Sure?' : 'Delete list'}
+          </button>
+        </div>
         <header className="todohead"><h1>{current.name}</h1></header>
       </div>
 
@@ -156,18 +160,14 @@ export function TodoLists({ todos, lists, today, update, updateLists }: Props) {
         </>
       )}
 
-      {listObj && (
-        <button type="button" className={'btn deletelist' + (armed ? ' armed' : '')} onClick={removeList}>
-          {armed ? 'Sure? To-dos move to Inbox' : 'Delete list'}
-        </button>
-      )}
+      {items.length === 0 && <p className="todoempty">No to-dos in this list yet.</p>}
 
       {(sheet === 'new' || editing) && (
         <TodoSheet
           key={editing?.id ?? 'new'}
           todo={editing}
           date={editing ? plannedDay(editing, todayKey) : todayKey}
-          listId={listObj?.id}
+          listId={current.id}
           lists={lists}
           todayKey={todayKey}
           marks={marks}

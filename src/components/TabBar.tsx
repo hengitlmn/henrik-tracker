@@ -90,6 +90,17 @@ const TODO_SECTIONS: { id: TodoSection; label: string; icon: ReactNode }[] = [
       </>
     ),
   },
+  {
+    id: 'upcoming',
+    label: 'Upcoming',
+    icon: (
+      <>
+        <rect x="4" y="5.5" width="16" height="14.5" rx="2.5" />
+        <path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" />
+        <path d="M9 15h6M13 13l2 2-2 2" />
+      </>
+    ),
+  },
 ];
 
 const MONEY_SECTIONS: { id: MoneySection; label: string; icon: ReactNode }[] = [

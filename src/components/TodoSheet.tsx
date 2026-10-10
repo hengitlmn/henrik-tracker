@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Todo, TodoList } from '../types';
 import { MONTHS_SHORT, WEEKDAYS_SHORT, parseKey } from '../lib/dates';
@@ -36,6 +36,8 @@ export function TodoSheet({ todo, date: initialDate, listId: initialList, lists,
   const [choosingList, setChoosingList] = useState(false);
   const [armed, setArmed] = useState(false);
   const valid = title.trim().length > 0;
+  const titleRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (!todo) titleRef.current?.focus({ preventScroll: true }); }, [todo]);
 
   return (
     <SettingsSheet compact label={todo ? 'Edit to-do' : 'New to-do'} closeLabel="Close" onClose={onClose}>
@@ -60,7 +62,7 @@ export function TodoSheet({ todo, date: initialDate, listId: initialList, lists,
               placeholder="Title"
               aria-label="Title"
               enterKeyHint="done"
-              autoFocus={!todo}
+              ref={titleRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -75,11 +77,11 @@ export function TodoSheet({ todo, date: initialDate, listId: initialList, lists,
             />
             <button type="button" className="field" aria-label="List" aria-expanded={choosingList} onClick={() => { setChoosingList((v) => !v); setPicking(false); }}>
               <span>List</span>
-              <em>{lists.find((l) => l.id === listId)?.name ?? 'Inbox'}</em>
+              <em>{lists.find((l) => l.id === listId)?.name ?? 'None'}</em>
             </button>
             {choosingList && (
               <div className="listchips" role="radiogroup" aria-label="Choose list">
-                {[{ id: undefined, name: 'Inbox' }, ...lists].map((l) => (
+                {[{ id: undefined, name: 'None' }, ...lists].map((l) => (
                   <button
                     key={l.id ?? 'inbox'}
                     type="button"

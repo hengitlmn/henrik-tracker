@@ -34,7 +34,7 @@ export function SettingsSheet({ onClose, children, label = 'Settings', closeLabe
 
   return (
     <>
-      <div className={'sheet-backdrop' + (closing ? ' closing' : '')} onClick={close} />
+      <div className={'sheet-backdrop' + (compact ? ' compact' : '') + (closing ? ' closing' : '')} onClick={close} />
       <div className={'sheet' + (compact ? ' compact' : '') + (closing ? ' closing' : '')} role="dialog" aria-modal="true" aria-label={label}>
         <div className="sheet-bar">
           <button type="button" className="sheet-close" aria-label={closeLabel} onClick={close}>

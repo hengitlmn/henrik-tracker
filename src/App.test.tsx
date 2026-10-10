@@ -405,33 +405,35 @@ describe('To-do-Tab', () => {
     render(<App />);
     tabTap(30); tabTap(30);
     const menu = screen.getByRole('menu', { name: 'To-do' });
-    expect([...menu.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['To-dos', 'Lists']);
+    expect([...menu.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['To-dos', 'Lists', 'Upcoming']);
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Lists' }));
     expect(document.querySelector('.sticky-top h1')!.textContent).toBe('Lists');
-    expect([...document.querySelectorAll('.listname')].map((e) => e.textContent)).toEqual(['Inbox']);
+    expect(document.querySelectorAll('.listname')).toHaveLength(0); // keine Liste vorgegeben
+    expect(screen.getByText(/No lists yet/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '+ New list' }));
     fireEvent.change(screen.getByLabelText('New list'), { target: { value: 'Groceries' } });
     fireEvent.submit(screen.getByLabelText('New list').closest('form')!);
-    expect([...document.querySelectorAll('.listname')].map((e) => e.textContent)).toEqual(['Inbox', 'Groceries']);
+    expect([...document.querySelectorAll('.listname')].map((e) => e.textContent)).toEqual(['Groceries']);
     expect(JSON.parse(localStorage.getItem('todo-lists-v1')!)).toMatchObject([{ name: 'Groceries' }]);
 
-    // in der Liste anlegen: Liste ist vorgewählt
+    // leere Liste ist erlaubt; in der Liste anlegen: Liste ist vorgewählt
     fireEvent.click(screen.getByText('Groceries'));
+    expect(screen.getByText(/No to-dos in this list/)).toBeTruthy();
     addTodo('Milk');
     expect(titles('.todos')).toEqual(['Milk']);
     expect(stored()[0].listId).toBe(JSON.parse(localStorage.getItem('todo-lists-v1')!)[0].id);
 
     // Tab To-dos: die Aufgabe erscheint mit Listen-Name, im Fenster lässt sich die Liste ändern
     fireEvent.click(screen.getByRole('button', { name: '‹ Lists' }));
-    expect(document.querySelector('.listcount')!.textContent).toBe('0'); // Inbox leer
+    expect(document.querySelector('.listcount')!.textContent).toBe('1');
     tabTap(30); tabTap(30);
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'To-dos' }));
     expect(document.querySelector('.listtag')!.textContent).toBe('Groceries');
     fireEvent.click(screen.getByText('Milk'));
     expect(screen.getByRole('button', { name: 'List' }).textContent).toMatch(/Groceries/);
     fireEvent.click(screen.getByRole('button', { name: 'List' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Inbox' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'None' }));
     vi.useFakeTimers();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     act(() => { vi.advanceTimersByTime(400); });
@@ -440,7 +442,7 @@ describe('To-do-Tab', () => {
     expect(document.querySelector('.listtag')).toBeNull();
   });
 
-  it('Liste löschen fragt nach, die Aufgaben wandern in den Inbox', () => {
+  it('Liste löschen fragt nach, die Aufgaben bleiben ohne Liste auf ihrem Tag', () => {
     localStorage.setItem('todo-lists-v1', JSON.stringify([{ id: 'l1', name: 'Work' }]));
     localStorage.setItem('todos-v1', JSON.stringify([{ id: 'a', title: 'Report', listId: 'l1' }]));
     render(<App />);
@@ -449,11 +451,33 @@ describe('To-do-Tab', () => {
     fireEvent.click(screen.getByText('Work'));
     fireEvent.click(screen.getByRole('button', { name: 'Delete list' }));
     expect(JSON.parse(localStorage.getItem('todo-lists-v1')!)).toHaveLength(1); // noch da
-    fireEvent.click(screen.getByRole('button', { name: /^Sure\?/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sure?' }));
     expect(JSON.parse(localStorage.getItem('todo-lists-v1')!)).toHaveLength(0);
     expect(stored()[0].listId).toBeUndefined();
-    expect([...document.querySelectorAll('.listname')].map((e) => e.textContent)).toEqual(['Inbox']);
-    expect(document.querySelector('.listcount')!.textContent).toBe('1');
+    expect(document.querySelectorAll('.listname')).toHaveLength(0);
+    tabTap(30); tabTap(30);
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'To-dos' }));
+    expect(titles('.todos')).toEqual(['Report']); // bleibt auf dem Today-Tab
+  });
+
+  it('Upcoming zeigt offene Aufgaben späterer Tage nach Tagen gruppiert', () => {
+    localStorage.setItem('todos-v1', JSON.stringify([
+      { id: 'a', title: 'Later', date: dayKey(5) },
+      { id: 'b', title: 'Tomorrow task', date: dayKey(1) },
+      { id: 'c', title: 'Today task', date: dayKey(0) },
+      { id: 'd', title: 'Done future', date: dayKey(2), completedAt: new Date().toISOString() },
+    ]));
+    render(<App />);
+    tabTap(30); tabTap(30);
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Upcoming' }));
+    expect(document.querySelector('.sticky-top h1')!.textContent).toBe('Upcoming');
+    expect([...document.querySelectorAll('.updayhead')].map((e) => e.textContent)).toEqual([
+      expect.stringMatching(/^Tomorrow · /),
+      expect.stringMatching(/^[A-Z][a-z]+day · \d{1,2}\. [A-Z][a-z]{2}$/),
+    ]);
+    expect(titles('.todos')).toEqual(['Tomorrow task', 'Later']);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to-do' })); // neue Aufgabe: Vorschlag morgen
+    expect(screen.getByRole('button', { name: 'Date' }).textContent).not.toMatch(/Today/);
   });
 
   it('Sicherung enthält To-dos und stellt sie wieder her', async () => {

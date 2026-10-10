@@ -54,7 +54,7 @@ Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true }, col
 
 To-dos: eigener Schlüssel `todos-v1`, Array von `{ id, title, completedAt?: ISO-Zeitpunkt, note?, date?: "YYYY-MM-DD", created?: "YYYY-MM-DD", listId? }` (kein `completedAt` = offen).
 `date` = geplanter Tag, `created` = Erstellungstag (bleibt beim Verschieben). Offene To-dos mit früherem `date` erscheinen automatisch heute (Übernahme in `src/lib/todos.ts`, keine Datenänderung). Ältere Daten ohne `date`: offen = heute, erledigt = Tag des Abhakens.
-To-do-Listen: eigener Schlüssel `todo-lists-v1`, Array von `{ id, name }`. Ohne `listId` liegt ein To-do im impliziten "Inbox". Liste löschen schiebt die To-dos in den Inbox.
+To-do-Listen: eigener Schlüssel `todo-lists-v1`, Array von `{ id, name }`. Ohne `listId` gehört ein To-do zu keiner Liste (es gibt keinen Inbox). Liste löschen entfernt nur die Zuordnung, die To-dos bleiben auf ihrem Tag.
 
 Money: eigener Schlüssel `money-v1`, `{ groups: [{id,name}], accounts: [{id,groupId,name,start}], entries: [{id,type:"income"|"expense"|"transfer",date:"YYYY-MM-DD",accountId,toAccountId?,category?,amount,note?}], categories: {income:[],expense:[]}, budgets: [{category,limit}] }`.
 `budgets` (Monatslimit je Ausgaben-Kategorie, Cent, eins pro Kategorie) ist neu und optional: fehlt es, gilt eine leere Liste.
@@ -118,15 +118,16 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings
     als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp auf den abgedunkelten Hintergrund).
     Langes Drücken wählt keinen Tab; Ziehen über die Leiste bricht es ab.
-  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers). Doppeltipp auf das To-do-Icon: Glas-Menü mit To-dos / Lists (wie bei Money).
+  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers). Doppeltipp auf das To-do-Icon: Glas-Menü mit To-dos / Lists / Upcoming (wie bei Money).
     To-dos: fester Kopf mit Wochentag (`Saturday`) groß und dem Datum (`3. Oct`) klein daneben; Tipp darauf öffnet die Tagesauswahl (Monatsraster,
     Punkte an Tagen mit To-dos, "Today"). Vergangene Tage zeigen nur, was da war bzw. erledigt wurde (gesperrt, kein Plus), zukünftige Tage zeigen was dafür geplant ist.
     Aufgaben als Zeilen mit Kästchen, fettem Titel, Notiz (2 Zeilen) und Listen-Name; darunter "+". Plus und Tipp auf den Titel öffnen ein kleines Fenster
-    (Blatt von unten, `compact`) mit Titel, Notiz, List, Date (Monatsraster), "Created …", Save und Delete (zweiter Tipp "Sure?"). Neue To-dos bekommen den angezeigten Tag.
+    (`compact`: schwebende Glas-Karte mittig über der Seite, Hintergrund scheint durch, kein Hochfahren von unten; so auch die Tagesauswahl) mit Titel, Notiz, List, Date (Monatsraster), "Created …", Save und Delete (zweiter Tipp "Sure?"). Neue To-dos bekommen den angezeigten Tag.
     Wischen nach rechts hakt ab (zweites Mal macht es wieder offen), Wischen nach links zeigt roten Delete-Button, der zweite Tipp "Sure?" löscht.
     Abhaken verschiebt unter "Hide completed" (auf-/zuklappbar) mit Zeitstempel (`3. Oct 14:55`).
-    Lists: Übersicht (Inbox + eigene Listen mit Zähler, "+ New list"), Tipp öffnet die Liste (alle To-dos unabhängig vom Tag, "‹ Lists", "Delete list" mit Nachfrage).
-    Noch nicht gebaut: Listen umbenennen, dritte Unterseite, Tags, Suche, Sortieren, Erinnerungen, Wiederholung, Dauer, roter Plus-Button.
+    Lists: Übersicht nur eigener Listen mit Zähler (zu Beginn leer, leere Listen erlaubt, "+ New list"), Tipp öffnet die Liste (alle To-dos unabhängig vom Tag, "‹ Lists", oben rechts "Delete list" mit Nachfrage).
+    Upcoming: offene To-dos späterer Tage nach Tagen gruppiert (Tomorrow · Wochentag · Datum), Plus schlägt morgen vor.
+    Noch nicht gebaut: Listen umbenennen, Tags, Suche, Sortieren, Erinnerungen, Wiederholung, Dauer, roter Plus-Button.
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
 - Einstellungen (im Blatt) im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
   Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:

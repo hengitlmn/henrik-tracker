@@ -474,7 +474,21 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .completed-toggle { display: block; margin: 22px 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
 
 /* To-do-Fenster und Tagesauswahl */
-.sheet.compact { top: auto; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 48px); }
+/* kleines Fenster: schwebt mittig über der Seite, Hintergrund scheint durch (kein Hochfahren von unten) */
+.sheet-backdrop.compact { background: rgba(0, 0, 0, .35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.sheet.compact {
+  top: calc(env(safe-area-inset-top, 0px) + 9vh); bottom: auto; left: 16px; right: 16px; max-width: 440px;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 9vh - 24px);
+  border-radius: 26px; border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(30, 30, 33, .86); -webkit-backdrop-filter: blur(28px) saturate(160%); backdrop-filter: blur(28px) saturate(160%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+  animation: popIn .26s cubic-bezier(.32,.72,0,1) both;
+}
+.sheet.compact.closing { animation: popOut .2s ease both; }
+.sheet.compact .sheet-bar { padding: 12px 14px 4px; }
+.sheet.compact .sheet-body { padding-bottom: 22px; }
+@keyframes popIn { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes popOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.96); } }
 .todosheet { display: block; }
 .sheet-title { width: 100%; font-size: 22px !important; font-weight: 700; padding: 6px 0 10px !important; border-bottom: 1.5px solid var(--line) !important; }
 .sheet-note {
@@ -503,8 +517,10 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .addlist { margin-top: 18px; flex: none; width: 100%; color: var(--muted); }
 .listadd { margin-top: 18px; }
 .listadd input[type="text"] { font-size: 17px; font-weight: 600; }
-.deletelist { margin-top: 36px; flex: none; width: 100%; color: var(--muted); }
-.deletelist.armed { color: var(--ink); border-color: var(--ink); }
+.listbar { display: flex; align-items: center; justify-content: space-between; }
+.listdelete { font-size: 15px; font-weight: 600; color: var(--muted); padding: 6px 0 6px 12px; }
+.listdelete.armed { color: var(--expense); }
+.updayhead { margin: 22px 0 0; font-size: 13px; font-weight: 700; color: var(--muted); }
 .listchips { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 12px; }
 .chip { padding: 8px 14px; border-radius: 999px; background: var(--bar); font-size: 15px; font-weight: 600; }
 .chip[aria-checked="true"] { background: var(--accent); color: #fff; }

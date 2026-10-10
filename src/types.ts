@@ -18,7 +18,7 @@ export interface Todo {
   date?: string;
   /** Erstellungstag "YYYY-MM-DD", bleibt beim Verschieben unverändert */
   created?: string;
-  /** Liste, zu der die Aufgabe gehört; ohne Angabe liegt sie im Inbox */
+  /** Liste, zu der die Aufgabe gehört; ohne Angabe gehört sie zu keiner Liste */
   listId?: string;
 }
 
@@ -27,7 +27,7 @@ export interface TodoList {
   name: string;
 }
 
-export type TodoSection = 'todos' | 'lists';
+export type TodoSection = 'todos' | 'lists' | 'upcoming';
 
 export type MoneySection = 'accounts' | 'stats' | 'calendar';
 

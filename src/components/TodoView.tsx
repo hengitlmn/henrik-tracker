@@ -10,6 +10,7 @@ import { DayPicker } from './DayPicker';
 import { TodoSheet } from './TodoSheet';
 import { TodoRows } from './TodoRow';
 import { TodoLists } from './TodoLists';
+import { TodoUpcoming } from './TodoUpcoming';
 
 interface Props {
   todos: Todo[];
@@ -25,10 +26,10 @@ type Sheet = null | 'day' | 'new' | { id: string };
 
 export function TodoView({ todos, lists, today, update, updateLists, section }: Props) {
   return (
-    <div key={section} className="view-in" style={{ '--dx': (section === 'lists' ? 28 : -28) + 'px' } as CSSProperties} data-todo={section}>
-      {section === 'lists'
-        ? <TodoLists todos={todos} lists={lists} today={today} update={update} updateLists={updateLists} />
-        : <TodoDay todos={todos} lists={lists} today={today} update={update} />}
+    <div key={section} className="view-in" style={{ '--dx': (section === 'todos' ? -28 : 28) + 'px' } as CSSProperties} data-todo={section}>
+      {section === 'lists' && <TodoLists todos={todos} lists={lists} today={today} update={update} updateLists={updateLists} />}
+      {section === 'upcoming' && <TodoUpcoming todos={todos} lists={lists} today={today} update={update} />}
+      {section === 'todos' && <TodoDay todos={todos} lists={lists} today={today} update={update} />}
     </div>
   );
 }
