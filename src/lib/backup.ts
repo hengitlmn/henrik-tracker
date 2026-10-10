@@ -1,13 +1,17 @@
-import type { Habit, Money, Todo } from '../types';
+import type { Habit, Money, Todo, TodoList } from '../types';
 import { keyOf } from './dates';
 import { newId } from './id';
 import { validColor } from './colors';
 import { parseMoney } from './money';
+import { copyTodoExtras, parseTodoLists } from './storage';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function exportText(habits: Habit[], todos: Todo[] = [], money?: Money): string {
-  return JSON.stringify({ app: 'habits', version: 1, exported: new Date().toISOString(), habits, todos, ...(money ? { money } : {}) });
+export function exportText(habits: Habit[], todos: Todo[] = [], money?: Money, todoLists?: TodoList[]): string {
+  return JSON.stringify({
+    app: 'habits', version: 1, exported: new Date().toISOString(), habits, todos,
+    ...(todoLists ? { todoLists } : {}), ...(money ? { money } : {}),
+  });
 }
 
 export interface ParsedBackup {
@@ -16,19 +20,22 @@ export interface ParsedBackup {
   todos: Todo[] | null;
   /** null: die Sicherung enthält kein Money (ältere Datei), dann bleibt Money unverändert */
   money: Money | null;
+  /** null: die Sicherung enthält keine Listen (ältere Datei), dann bleiben die aktuellen erhalten */
+  todoLists: TodoList[] | null;
 }
 
 function parseTodos(raw: unknown): Todo[] | null {
   if (!Array.isArray(raw)) return null;
   const out: Todo[] = [];
   for (let i = 0; i < raw.length; i++) {
-    const t = raw[i] as { id?: unknown; title?: unknown; completedAt?: unknown } | null;
+    const t = raw[i] as { id?: unknown; title?: unknown; completedAt?: unknown; note?: unknown; date?: unknown; created?: unknown; listId?: unknown } | null;
     if (!t || typeof t.title !== 'string' || !t.title.trim()) return null;
     const todo: Todo = {
       id: typeof t.id === 'string' && t.id ? t.id : newId() + i,
       title: t.title.trim().slice(0, 200),
     };
     if (typeof t.completedAt === 'string' && !Number.isNaN(Date.parse(t.completedAt))) todo.completedAt = t.completedAt;
+    copyTodoExtras(t, todo);
     out.push(todo);
   }
   return out;
@@ -83,5 +90,7 @@ export function parseBackup(text: string): ParsedBackup | null {
     money = parseMoney((data as { money?: unknown }).money);
     if (money === null) return null;
   }
-  return { habits: out, todos, money };
+  const rawLists = !Array.isArray(data) && data ? (data as { todoLists?: unknown }).todoLists : undefined;
+  const todoLists = Array.isArray(rawLists) ? parseTodoLists(rawLists) : null;
+  return { habits: out, todos, money, todoLists };
 }

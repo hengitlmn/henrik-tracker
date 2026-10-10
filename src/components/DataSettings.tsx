@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { Habit, Money, Todo } from '../types';
+import type { Habit, Money, Todo, TodoList } from '../types';
 import { backupFileName, exportText, parseBackup } from '../lib/backup';
 import type { ParsedBackup } from '../lib/backup';
 
@@ -8,6 +8,8 @@ interface Props {
   update: (fn: (current: Habit[]) => Habit[]) => void;
   todos: Todo[];
   updateTodos: (fn: (current: Todo[]) => Todo[]) => void;
+  todoLists: TodoList[];
+  updateTodoLists: (fn: (current: TodoList[]) => TodoList[]) => void;
   money: Money;
   updateMoney: (fn: (current: Money) => Money) => void;
 }
@@ -37,13 +39,13 @@ function UploadIcon() {
   );
 }
 
-export function DataSettings({ habits, update, todos, updateTodos, money, updateMoney }: Props) {
+export function DataSettings({ habits, update, todos, updateTodos, todoLists, updateTodoLists, money, updateMoney }: Props) {
   const [msg, setMsg] = useState('');
   const [pending, setPending] = useState<ParsedBackup | null>(null); // gesetzt = Ersetzen wartet auf Bestätigung
   const fileInput = useRef<HTMLInputElement>(null);
 
   const backup = () => {
-    const text = exportText(habits, todos, money);
+    const text = exportText(habits, todos, money, todoLists);
     const fileName = backupFileName();
     let file: File | null = null;
     try { file = new File([text], fileName, { type: 'application/json' }); } catch { /* ältere Browser */ }
@@ -103,6 +105,7 @@ export function DataSettings({ habits, update, todos, updateTodos, money, update
     }
     update(() => pending.habits);
     if (pending.todos) updateTodos(() => pending.todos!);
+    if (pending.todoLists) updateTodoLists(() => pending.todoLists!);
     if (pending.money) updateMoney(() => pending.money!);
     const h = pending.habits.length;
     setMsg(

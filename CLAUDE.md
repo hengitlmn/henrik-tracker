@@ -11,7 +11,7 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 - `src/main.tsx`: Einstieg, Zoom-Sperre (Gesten-Events), Service-Worker-Registrierung
 - `src/App.tsx`: Tab-Zustand, Ansichtswechsel mit Animation, Abhaken
 - `src/hooks.ts`: `useHabits` (localStorage, speichert nur bei Änderungen), `useToday`, `useWeekNav`
-- `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView`, `SettingsView` (Übersicht) mit
+- `src/components/`: `CalendarView` (Kopf, Wochenzeile, Karten, Wischen), `TodoView` (Tag), `TodoLists`, `TodoRow` (Wischen), `TodoSheet` (Fenster), `DayPicker`, `SettingsView` (Übersicht) mit
   `HabitsSettings` und `DataSettings`, `MoneyView` (Konten, Kontoseite) mit `EntryForm`, `EntryDays` (Einträge nach Tagen), `MoneyStats`, `MoneyCalendar`, `MonthNav`, `MoneySettings`, `SettingsSheet` (Blatt von unten mit X), `TabBar` (Pille, Ziehen, langes Drücken)
 - `src/lib/`: `dates.ts` (Woche, ISO-Woche, Streak), `money.ts` (Salden, Format, Betrag lesen, Prüfung), `stats.ts` (Monatssummen, Kategorien, Suche), `storage.ts`, `backup.ts` (Export/Import/Kopieren), `id.ts`
 - `src/styles.css`: gesamtes Design (CSS-Variablen auf `:root`)
@@ -52,7 +52,9 @@ Der Nutzer schreibt auf Deutsch, antworte auf Deutsch (kurz und konkret, bei kom
 Intern: Array von `{ id: string, name: string, done: { "YYYY-MM-DD": true }, color?: "#RRGGBB" }`.
 `color` ist optional (Farbe der abgehakten Kreise, ohne Angabe der Akzent); alte Daten ohne `color` bleiben gültig.
 
-To-dos: eigener Schlüssel `todos-v1`, Array von `{ id: string, title: string, completedAt?: ISO-Zeitpunkt }` (kein `completedAt` = offen).
+To-dos: eigener Schlüssel `todos-v1`, Array von `{ id, title, completedAt?: ISO-Zeitpunkt, note?, date?: "YYYY-MM-DD", created?: "YYYY-MM-DD", listId? }` (kein `completedAt` = offen).
+`date` = geplanter Tag, `created` = Erstellungstag (bleibt beim Verschieben). Offene To-dos mit früherem `date` erscheinen automatisch heute (Übernahme in `src/lib/todos.ts`, keine Datenänderung). Ältere Daten ohne `date`: offen = heute, erledigt = Tag des Abhakens.
+To-do-Listen: eigener Schlüssel `todo-lists-v1`, Array von `{ id, name }`. Ohne `listId` liegt ein To-do im impliziten "Inbox". Liste löschen schiebt die To-dos in den Inbox.
 
 Money: eigener Schlüssel `money-v1`, `{ groups: [{id,name}], accounts: [{id,groupId,name,start}], entries: [{id,type:"income"|"expense"|"transfer",date:"YYYY-MM-DD",accountId,toAccountId?,category?,amount,note?}], categories: {income:[],expense:[]}, budgets: [{category,limit}] }`.
 `budgets` (Monatslimit je Ausgaben-Kategorie, Cent, eins pro Kategorie) ist neu und optional: fehlt es, gilt eine leere Liste.
@@ -60,7 +62,7 @@ Alle Beträge in Cent (ganze Zahlen, `amount` immer positiv). Kontostand = `star
 Anzeige deutsch (`€ 1.057,60`), Eingabe `12,5` oder `12.50`. Ungültige Teile fallen beim Laden/Import weg (`parseMoney`).
 
 Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...], todos: [...], money: {...} }`.
-`money` ist wie `todos` optional beim Import (fehlt es, bleibt Money unverändert). `todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
+`money` und `todoLists` sind wie `todos` optional beim Import (fehlt es, bleibt Money unverändert). `todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
 Der Import akzeptiert zusätzlich das ältere reine Array-Format und verwirft ungültige Datumsschlüssel.
 Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" bestätigen).
 
@@ -116,12 +118,15 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings
     als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp auf den abgedunkelten Hintergrund).
     Langes Drücken wählt keinen Tab; Ziehen über die Leiste bricht es ab.
-  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers): fester Kopf mit Wochentag (`Saturday`) groß und dem Datum (`3. Oct`) klein daneben,
-    Aufgaben als einfache Zeilen mit Kästchen und fettem Titel, darunter ein "+" (Tipp öffnet eine Eingabezeile, Enter
-    fügt hinzu und lässt sie offen). Abhaken verschiebt die Aufgabe unter "Hide completed" (auf-/zuklappbar) mit
-    Zeitstempel (`3. Oct 14:55`), Rückgängig setzt sie an die ursprüngliche Stelle. Tipp auf den Titel = umbenennen,
-    Papierkorb daneben = löschen. Noch nicht gebaut: Datum/Uhrzeit, Tags, Detail-Sheet, Suche, Sortieren, Erinnerungen,
-    Wiederholung, Dauer, roter Plus-Button (bewusst auf später verschoben).
+  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers). Doppeltipp auf das To-do-Icon: Glas-Menü mit To-dos / Lists (wie bei Money).
+    To-dos: fester Kopf mit Wochentag (`Saturday`) groß und dem Datum (`3. Oct`) klein daneben; Tipp darauf öffnet die Tagesauswahl (Monatsraster,
+    Punkte an Tagen mit To-dos, "Today"). Vergangene Tage zeigen nur, was da war bzw. erledigt wurde (gesperrt, kein Plus), zukünftige Tage zeigen was dafür geplant ist.
+    Aufgaben als Zeilen mit Kästchen, fettem Titel, Notiz (2 Zeilen) und Listen-Name; darunter "+". Plus und Tipp auf den Titel öffnen ein kleines Fenster
+    (Blatt von unten, `compact`) mit Titel, Notiz, List, Date (Monatsraster), "Created …", Save und Delete (zweiter Tipp "Sure?"). Neue To-dos bekommen den angezeigten Tag.
+    Wischen nach rechts hakt ab (zweites Mal macht es wieder offen), Wischen nach links zeigt roten Delete-Button, der zweite Tipp "Sure?" löscht.
+    Abhaken verschiebt unter "Hide completed" (auf-/zuklappbar) mit Zeitstempel (`3. Oct 14:55`).
+    Lists: Übersicht (Inbox + eigene Listen mit Zähler, "+ New list"), Tipp öffnet die Liste (alle To-dos unabhängig vom Tag, "‹ Lists", "Delete list" mit Nachfrage).
+    Noch nicht gebaut: Listen umbenennen, dritte Unterseite, Tags, Suche, Sortieren, Erinnerungen, Wiederholung, Dauer, roter Plus-Button.
 - Hauptansicht zeigt Wochenleiste und Kalender immer, auch ohne Gewohnheit (kein Leertext).
 - Einstellungen (im Blatt) im Stil der iOS-Einstellungen, ohne Überschrift: oben eine große Konto-Karte (graues rundes
   Profilbild, "Sign in", Chevron; Funktion folgt später), darunter Zeilen mit farbiger Icon-Kachel und Chevron:

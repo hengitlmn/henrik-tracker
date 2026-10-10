@@ -1,34 +1,52 @@
-import { useEffect, useRef, useState } from 'react';
-import type { FormEvent, KeyboardEvent } from 'react';
-import type { Todo } from '../types';
+import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+import type { Todo, TodoList, TodoSection } from '../types';
 import { newId } from '../lib/id';
-import { MONTHS_SHORT, WEEKDAYS_EN, stamp } from '../lib/dates';
+import { MONTHS_SHORT, WEEKDAYS_EN, keyOf, parseKey } from '../lib/dates';
+import { applyFields, markedDays, plannedDay, todosForDay } from '../lib/todos';
+import type { TodoFields } from '../lib/todos';
+import { SettingsSheet } from './SettingsSheet';
+import { DayPicker } from './DayPicker';
+import { TodoSheet } from './TodoSheet';
+import { TodoRows } from './TodoRow';
+import { TodoLists } from './TodoLists';
 
 interface Props {
   todos: Todo[];
+  lists: TodoList[];
   today: Date;
   update: (fn: (current: Todo[]) => Todo[]) => void;
+  updateLists: (fn: (current: TodoList[]) => TodoList[]) => void;
+  section: TodoSection;
 }
 
-export function TodoView({ todos, today, update }: Props) {
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
+/** null: kein Fenster, 'day': Tagesauswahl, 'new': neue Aufgabe, sonst die Id der Aufgabe */
+type Sheet = null | 'day' | 'new' | { id: string };
+
+export function TodoView({ todos, lists, today, update, updateLists, section }: Props) {
+  return (
+    <div key={section} className="view-in" style={{ '--dx': (section === 'lists' ? 28 : -28) + 'px' } as CSSProperties} data-todo={section}>
+      {section === 'lists'
+        ? <TodoLists todos={todos} lists={lists} today={today} update={update} updateLists={updateLists} />
+        : <TodoDay todos={todos} lists={lists} today={today} update={update} />}
+    </div>
+  );
+}
+
+function TodoDay({ todos, lists, today, update }: Pick<Props, 'todos' | 'lists' | 'today' | 'update'>) {
+  const todayKey = keyOf(today);
+  const [dayKey, setDayKey] = useState<string | null>(null); // null: folgt dem heutigen Tag
+  const [sheet, setSheet] = useState<Sheet>(null);
   const [showCompleted, setShowCompleted] = useState(true);
-  const addRef = useRef<HTMLInputElement>(null);
 
-  // offene Aufgaben in der Reihenfolge des Anlegens, erledigte zuletzt erledigt zuerst
-  const open = todos.filter((t) => !t.completedAt);
-  const completed = todos
-    .filter((t) => t.completedAt)
-    .sort((a, b) => Date.parse(b.completedAt!) - Date.parse(a.completedAt!));
+  const selected = dayKey ?? todayKey;
+  const past = selected < todayKey; // vergangene Tage nur ansehen
+  const day = parseKey(selected);
+  const { open, done } = useMemo(() => todosForDay(todos, selected, todayKey), [todos, selected, todayKey]);
+  const marks = useMemo(() => markedDays(todos, todayKey), [todos, todayKey]);
+  const listName = (t: Todo) => lists.find((l) => l.id === t.listId)?.name;
 
-  useEffect(() => {
-    if (adding) {
-      addRef.current?.focus();
-      addRef.current?.scrollIntoView?.({ block: 'nearest' });
-    }
-  }, [adding, todos.length]);
+  const pickDay = (key: string) => setDayKey(key === todayKey ? null : key);
 
   const toggle = (id: string) =>
     update((ts) =>
@@ -43,149 +61,88 @@ export function TodoView({ todos, today, update }: Props) {
       }),
     );
 
-  const add = (e: FormEvent) => {
-    e.preventDefault();
-    const title = draft.trim();
-    if (!title) return;
-    update((ts) => [...ts, { id: newId(), title }]);
-    setDraft(''); // Eingabe bleibt offen für die nächste Aufgabe
+  const save = (fields: TodoFields) => {
+    const id = sheet && typeof sheet === 'object' ? sheet.id : null;
+    update((ts) => applyFields(ts, id, fields, todayKey, newId));
   };
+
+  const editing = sheet && typeof sheet === 'object' ? todos.find((t) => t.id === sheet.id) : undefined;
+  const rows = (items: Todo[], className = '') => (
+    <TodoRows
+      todos={items}
+      locked={past}
+      className={className}
+      listName={listName}
+      onOpen={(id) => setSheet({ id })}
+      onToggle={toggle}
+      onDelete={(id) => update((ts) => ts.filter((t) => t.id !== id))}
+    />
+  );
 
   return (
     <div>
-      {/* Titel bleibt beim Scrollen oben stehen */}
+      {/* Wochentag und Datum bleiben beim Scrollen oben stehen; Tipp öffnet die Tagesauswahl */}
       <div className="sticky-top">
         <header className="todohead">
-          <h1>{WEEKDAYS_EN[today.getDay()]}</h1>
-          <span className="todate">{today.getDate() + '. ' + MONTHS_SHORT[today.getMonth()]}</span>
+          <button type="button" className="todaypick" aria-label="Choose day" onClick={() => setSheet('day')}>
+            <h1>{WEEKDAYS_EN[day.getDay()]}</h1>
+            <span className="todate">{day.getDate() + '. ' + MONTHS_SHORT[day.getMonth()]}</span>
+          </button>
+          {selected !== todayKey && (
+            <button type="button" className="todaylink" onClick={() => setDayKey(null)}>Today</button>
+          )}
         </header>
       </div>
 
-      <ul className="todos">
-        {open.map((t) => (
-          <TodoRow key={t.id} todo={t} editing={editingId === t.id} onEdit={setEditingId} onToggle={toggle} update={update} />
-        ))}
-      </ul>
+      {rows(open)}
 
-      {adding ? (
-        <form className="todorow addrow" autoComplete="off" onSubmit={add}>
-          <span className="check" aria-hidden="true" />
-          <input
-            ref={addRef}
-            type="text"
-            maxLength={200}
-            placeholder="Add to-do"
-            aria-label="New to-do"
-            enterKeyHint="done"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => { if (!draft.trim()) setAdding(false); }}
-          />
-        </form>
-      ) : (
-        <button type="button" className="plusrow" aria-label="Add to-do" onClick={() => setAdding(true)}>
+      {!past && (
+        <button type="button" className="plusrow" aria-label="Add to-do" onClick={() => setSheet('new')}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
             <path d="M12 5v14M5 12h14" />
           </svg>
         </button>
       )}
 
-      {completed.length > 0 && (
+      {done.length > 0 && (
         <>
           <button type="button" className="completed-toggle" onClick={() => setShowCompleted((v) => !v)}>
             {showCompleted ? 'Hide completed' : 'Show completed'}
           </button>
-          {showCompleted && (
-            <ul className="todos completed">
-              {completed.map((t) => (
-                <TodoRow key={t.id} todo={t} editing={editingId === t.id} onEdit={setEditingId} onToggle={toggle} update={update} />
-              ))}
-            </ul>
-          )}
+          {showCompleted && rows(done, 'completed')}
         </>
       )}
+
+      {past && open.length === 0 && done.length === 0 && <p className="todoempty">No to-dos on this day.</p>}
+
+      {sheet === 'day' && (
+        <SettingsSheet compact label="Choose day" closeLabel="Close" onClose={() => setSheet(null)}>
+          {(close) => (
+            <>
+              <DayPicker value={selected} todayKey={todayKey} marks={marks} onPick={(k) => { pickDay(k); close(); }} />
+              {selected !== todayKey && (
+                <div className="formbtns">
+                  <button type="button" className="btn" onClick={() => { setDayKey(null); close(); }}>Today</button>
+                </div>
+              )}
+            </>
+          )}
+        </SettingsSheet>
+      )}
+
+      {(sheet === 'new' || editing) && (
+        <TodoSheet
+          key={editing?.id ?? 'new'}
+          todo={editing}
+          date={editing ? plannedDay(editing, todayKey) : selected}
+          lists={lists}
+          todayKey={todayKey}
+          marks={marks}
+          onSave={save}
+          onDelete={() => editing && update((ts) => ts.filter((t) => t.id !== editing.id))}
+          onClose={() => setSheet(null)}
+        />
+      )}
     </div>
-  );
-}
-
-function TodoRow({ todo, editing, onEdit, onToggle, update }: {
-  todo: Todo;
-  editing: boolean;
-  onEdit: (id: string | null) => void;
-  onToggle: (id: string) => void;
-  update: Props['update'];
-}) {
-  const done = !!todo.completedAt;
-  const [value, setValue] = useState(todo.title);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editing) {
-      setValue(todo.title);
-      inputRef.current?.focus();
-    }
-  }, [editing, todo.title]);
-
-  const save = () => {
-    const title = value.trim();
-    if (title && title !== todo.title) update((ts) => ts.map((t) => (t.id === todo.id ? { ...t, title } : t)));
-    onEdit(null);
-  };
-
-  const remove = () => update((ts) => ts.filter((t) => t.id !== todo.id));
-
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); save(); }
-    if (e.key === 'Escape') onEdit(null);
-  };
-
-  return (
-    <li className={'todorow' + (done ? ' done' : '')}>
-      <button
-        type="button"
-        className="check"
-        role="checkbox"
-        aria-checked={done}
-        aria-label={(done ? 'Mark as open: ' : 'Complete: ') + todo.title}
-        onClick={() => onToggle(todo.id)}
-      >
-        {done && (
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 12.5l4.5 4.5L19 7.5" />
-          </svg>
-        )}
-      </button>
-
-      <div className="todobody">
-        {editing ? (
-          <div className="editline">
-            <input
-              ref={inputRef}
-              type="text"
-              maxLength={200}
-              aria-label="Edit to-do"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onBlur={save}
-              onKeyDown={onKey}
-            />
-            <button
-              type="button"
-              className="trash"
-              aria-label={'Delete: ' + todo.title}
-              onPointerDown={remove}   /* vor dem Blur des Eingabefelds, sonst verschwindet der Button vor dem Tipp */
-              onClick={remove}
-            >
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.8 12.5h9.4L17.5 7M10 11v5M14 11v5" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <button type="button" className="todotitle" onClick={() => onEdit(todo.id)}>{todo.title}</button>
-        )}
-        {done && <span className="stamp">{stamp(todo.completedAt!)}</span>}
-      </div>
-    </li>
   );
 }

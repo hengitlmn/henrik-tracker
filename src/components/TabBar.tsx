@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
-import type { MoneySection, Tab } from '../types';
+import type { MoneySection, Tab, TodoSection } from '../types';
 
 export const TAB_ORDER: Tab[] = ['todo', 'money', 'cal', 'gym', 'notes'];
 
@@ -67,6 +67,31 @@ const ICONS: Record<Tab, { label: string; icon: ReactNode }> = {
   },
 };
 
+const TODO_SECTIONS: { id: TodoSection; label: string; icon: ReactNode }[] = [
+  {
+    id: 'todos',
+    label: 'To-dos',
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M8.5 12.2l2.5 2.5 4.5-5" />
+      </>
+    ),
+  },
+  {
+    id: 'lists',
+    label: 'Lists',
+    icon: (
+      <>
+        <path d="M9 7h11M9 12h11M9 17h11" />
+        <circle cx="4.8" cy="7" r=".9" />
+        <circle cx="4.8" cy="12" r=".9" />
+        <circle cx="4.8" cy="17" r=".9" />
+      </>
+    ),
+  },
+];
+
 const MONEY_SECTIONS: { id: MoneySection; label: string; icon: ReactNode }[] = [
   {
     id: 'accounts',
@@ -108,6 +133,8 @@ interface Props {
   onOpenSettings: () => void;
   moneySection: MoneySection;
   onMoneySection: (section: MoneySection) => void;
+  todoSection: TodoSection;
+  onTodoSection: (section: TodoSection) => void;
 }
 
 /**
@@ -116,7 +143,7 @@ interface Props {
  * Loslassen wählt den Tab darunter. Langes Drücken: die Leiste gibt kurz nach und spuckt
  * wie ein Wassertropfen ein kleines Menü "Settings" nach oben aus.
  */
-export function TabBar({ current, onSelect, onOpenSettings, moneySection, onMoneySection }: Props) {
+export function TabBar({ current, onSelect, onOpenSettings, moneySection, onMoneySection, todoSection, onTodoSection }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef(current);
@@ -127,7 +154,7 @@ export function TabBar({ current, onSelect, onOpenSettings, moneySection, onMone
   const pressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const squishTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const longPressed = useRef(false);
-  const [menu, setMenu] = useState<null | 'settings' | 'money'>(null);
+  const [menu, setMenu] = useState<null | 'settings' | 'money' | 'todo'>(null);
   const lastTap = useRef({ idx: -1, t: 0 });
   const [squish, setSquish] = useState(false);
   const [hover, setHover] = useState(-1);
@@ -251,10 +278,10 @@ export function TabBar({ current, onSelect, onOpenSettings, moneySection, onMone
       const now = Date.now();
       const last = lastTap.current;
       lastTap.current = { idx, t: now };
-      if (target === 'money' && last.idx === idx && now - last.t < DOUBLE_TAP_MS) {
+      if ((target === 'money' || target === 'todo') && last.idx === idx && now - last.t < DOUBLE_TAP_MS) {
         lastTap.current = { idx: -1, t: 0 };
         onSelect(target);
-        setMenu('money'); // Doppeltipp auf Money: Auswahl Accounts / Stats / Calendar
+        setMenu(target); // Doppeltipp: Money (Accounts / Stats / Calendar) oder To-do (To-dos / Lists)
         return;
       }
       if (target !== currentRef.current) onSelect(target);
@@ -308,15 +335,19 @@ export function TabBar({ current, onSelect, onOpenSettings, moneySection, onMone
                 </button>
               </div>
             )}
-            {menu === 'money' && (
-              <div className="tabmenu moneymenu" role="menu" aria-label="Money">
-                {MONEY_SECTIONS.map((sec) => (
+            {(menu === 'money' || menu === 'todo') && (
+              <div className={'tabmenu moneymenu ' + menu + 'menu'} role="menu" aria-label={menu === 'money' ? 'Money' : 'To-do'}>
+                {(menu === 'money' ? MONEY_SECTIONS : TODO_SECTIONS).map((sec) => (
                   <button
                     key={sec.id}
                     type="button"
                     role="menuitemradio"
-                    aria-checked={moneySection === sec.id}
-                    onClick={() => { setMenu(null); onMoneySection(sec.id); }}
+                    aria-checked={(menu === 'money' ? moneySection : todoSection) === sec.id}
+                    onClick={() => {
+                      setMenu(null);
+                      if (menu === 'money') onMoneySection(sec.id as MoneySection);
+                      else onTodoSection(sec.id as TodoSection);
+                    }}
                   >
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       {sec.icon}

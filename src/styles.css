@@ -408,6 +408,7 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
   100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 .moneymenu { left: 30%; transform-origin: 50% 100%; animation: menuRise .4s cubic-bezier(.3,.7,.3,1) both; display: flex; flex-direction: column; border-radius: 26px; }
+.todomenu { left: 100px; }
 .moneymenu button { min-width: 168px; }
 .moneymenu button[aria-checked="true"] { background: rgba(255, 255, 255, .14); }
 .tabmenu button { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 22px 0 18px; border-radius: 999px; font-size: 16px; font-weight: 600; }
@@ -435,7 +436,9 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
 /* To-do-Tab */
-.todohead { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; }
+.todohead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 10px; }
+.todaypick { display: flex; align-items: baseline; gap: 10px; text-align: left; }
+.todaylink { font-size: 14px; font-weight: 600; color: var(--accent); padding: 4px 0 4px 12px; }
 .todohead h1 { font-size: 28px; font-weight: 700; }
 .todate { font-size: 17px; font-weight: 600; color: var(--muted); }
 .todos { padding-top: 2px; }
@@ -453,12 +456,58 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .stamp { font-size: 12px; font-weight: 600; color: var(--accent); opacity: .8; }
 .editline { display: flex; align-items: center; gap: 8px; }
 .editline input[type="text"] { font-size: 17px; font-weight: 600; padding: 0 0 2px; }
-.trash { flex: none; color: var(--muted); padding: 4px; }
+.swipe { position: relative; overflow: hidden; }
+.swipe-front { position: relative; background: var(--bg); touch-action: pan-y; transition: transform .22s cubic-bezier(.32,.72,0,1); }
+.swipe-front.dragging { transition: none; }
+.swipe-under { position: absolute; inset: 0; display: flex; align-items: stretch; justify-content: space-between; }
+.swipe-done { width: 100%; position: absolute; inset: 0; display: flex; align-items: center; padding-left: 18px; background: #3FB67A; color: #fff; opacity: 0; }
+.swipe-done.on { opacity: 1; }
+.swipe-del { position: absolute; top: 0; bottom: 0; right: 0; width: 88px; background: var(--expense); color: #fff; font-size: 15px; font-weight: 600; opacity: 0; pointer-events: none; }
+.swipe-del.on { opacity: 1; pointer-events: auto; }
+.swipe-del.armed { background: #D43F3F; }
+.todometa { display: flex; align-items: center; gap: 8px; }
+.listtag { font-size: 12px; font-weight: 600; color: var(--muted); }
+.todonote { font-size: 14px; color: var(--muted); line-height: 1.35; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.check[aria-disabled="true"] { opacity: .6; }
 .plusrow { display: flex; align-items: center; width: 24px; justify-content: center; margin: 4px 0 0; padding: 10px 0; color: var(--muted); }
-.addrow { margin: 0; align-items: center; }
-.addrow .check { margin-top: 0; opacity: .6; }
-.addrow input[type="text"] { font-size: 17px; font-weight: 600; border: 0; padding: 0; }
+.todoempty { margin-top: 18px; font-size: 15px; color: var(--muted); }
 .completed-toggle { display: block; margin: 22px 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
+
+/* To-do-Fenster und Tagesauswahl */
+.sheet.compact { top: auto; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 48px); }
+.todosheet { display: block; }
+.sheet-title { width: 100%; font-size: 22px !important; font-weight: 700; padding: 6px 0 10px !important; border-bottom: 1.5px solid var(--line) !important; }
+.sheet-note {
+  display: block; width: 100%; margin: 10px 0 8px; padding: 0 0 10px; resize: none;
+  font: inherit; font-size: 16px; line-height: 1.4; color: var(--ink);
+  background: transparent; border: 0; border-bottom: 1.5px solid var(--line); border-radius: 0;
+}
+.sheet-note:focus { outline: none; border-bottom-color: var(--ink); }
+.sheet-note::placeholder { color: var(--muted); }
+.created { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.daypicker { padding: 6px 0 4px; }
+.dp-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; font-size: 16px; font-weight: 600; }
+.dp-head button { width: 40px; height: 36px; font-size: 22px; color: var(--ink); }
+.dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.dp-letter { font-size: 12px; color: var(--muted); padding-bottom: 4px; }
+.dp-day { position: relative; height: 40px; border-radius: 50%; font-size: 16px; font-weight: 500; }
+.dp-day.today { color: var(--accent); font-weight: 700; }
+.dp-day.sel { background: var(--accent); color: #fff; }
+.dp-day.mark::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; opacity: .55; }
+
+/* Listen */
+.listrows { padding-top: 2px; }
+.listrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 0; border-bottom: 1px solid var(--line); text-align: left; color: var(--muted); }
+.listname { flex: 1; font-size: 17px; font-weight: 600; color: var(--ink); }
+.listcount { font-size: 15px; font-weight: 600; }
+.addlist { margin-top: 18px; flex: none; width: 100%; color: var(--muted); }
+.listadd { margin-top: 18px; }
+.listadd input[type="text"] { font-size: 17px; font-weight: 600; }
+.deletelist { margin-top: 36px; flex: none; width: 100%; color: var(--muted); }
+.deletelist.armed { color: var(--ink); border-color: var(--ink); }
+.listchips { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 12px; }
+.chip { padding: 8px 14px; border-radius: 999px; background: var(--bar); font-size: 15px; font-weight: 600; }
+.chip[aria-checked="true"] { background: var(--accent); color: #fff; }
 
 /* Ansichtswechsel */
 @keyframes viewIn { from { opacity: 0; transform: translateX(var(--dx, 0px)); } to { opacity: 1; transform: none; } }

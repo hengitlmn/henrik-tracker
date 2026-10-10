@@ -73,3 +73,22 @@ describe('todo storage', () => {
     expect(loadTodos()).toEqual([]);
   });
 });
+
+describe('To-do-Listen und Zusatzfelder', () => {
+  it('Listen, Notiz, Tag und Liste bleiben in der Sicherung erhalten', () => {
+    const todos = [{ id: 't', title: 'A', note: 'n', date: '2026-10-12', created: '2026-10-10', listId: 'l1' }];
+    const lists = [{ id: 'l1', name: 'Work' }];
+    const r = parseBackup(exportText([], todos, undefined, lists))!;
+    expect(r.todos).toEqual(todos);
+    expect(r.todoLists).toEqual(lists);
+  });
+
+  it('ältere Dateien ohne Listen: null, ungültige Daten fallen weg', () => {
+    expect(parseBackup(JSON.stringify({ habits: [], todos: [] }))!.todoLists).toBeNull();
+    const r = parseBackup(JSON.stringify({ habits: [], todos: [{ title: 'A', date: 'x', created: 5, listId: '' }], todoLists: [{ name: ' ' }, { id: 'a', name: 'Ok' }] }))!;
+    expect(r.todos![0]).toMatchObject({ title: 'A' });
+    expect(r.todos![0].date).toBeUndefined();
+    expect(r.todos![0].listId).toBeUndefined();
+    expect(r.todoLists).toEqual([{ id: 'a', name: 'Ok' }]);
+  });
+});

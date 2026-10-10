@@ -12,7 +12,22 @@ export interface Todo {
   title: string;
   /** ISO-Zeitpunkt des Abhakens; ohne Angabe ist die Aufgabe offen */
   completedAt?: string;
+  /** Notiz, optional */
+  note?: string;
+  /** Geplanter Tag "YYYY-MM-DD"; ohne Angabe (ältere Daten) gilt: offen = heute, erledigt = Tag des Abhakens */
+  date?: string;
+  /** Erstellungstag "YYYY-MM-DD", bleibt beim Verschieben unverändert */
+  created?: string;
+  /** Liste, zu der die Aufgabe gehört; ohne Angabe liegt sie im Inbox */
+  listId?: string;
 }
+
+export interface TodoList {
+  id: string;
+  name: string;
+}
+
+export type TodoSection = 'todos' | 'lists';
 
 export type MoneySection = 'accounts' | 'stats' | 'calendar';
 
