@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import type { Todo } from '../types';
 import { newId } from '../lib/id';
-import { shortDate, stamp } from '../lib/dates';
+import { MONTHS_SHORT, WEEKDAYS_EN, stamp } from '../lib/dates';
 
 interface Props {
   todos: Todo[];
@@ -56,8 +56,8 @@ export function TodoView({ todos, today, update }: Props) {
       {/* Titel bleibt beim Scrollen oben stehen */}
       <div className="sticky-top">
         <header className="todohead">
-          <h1>Today</h1>
-          <span className="todate">{shortDate(today)}</span>
+          <h1>{WEEKDAYS_EN[today.getDay()]}</h1>
+          <span className="todate">{today.getDate() + '. ' + MONTHS_SHORT[today.getMonth()]}</span>
         </header>
       </div>
 

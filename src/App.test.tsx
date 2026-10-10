@@ -217,11 +217,11 @@ describe('To-do-Tab', () => {
   };
   const titles = (sel: string) => [...document.querySelectorAll(`${sel} .todotitle`)].map((e) => e.textContent);
 
-  it('zeigt "Today" mit Datum und nur ein Plus, sonst nichts', () => {
+  it('zeigt Wochentag mit Datum und nur ein Plus, sonst nichts', () => {
     render(<App />);
     openTodo();
-    expect(document.querySelector('.sticky-top h1')!.textContent).toBe('Today');
-    expect(document.querySelector('.todate')!.textContent).toMatch(/^[A-Z][a-z]{2} \d{1,2}\. [A-Z][a-z]{2}$/);
+    expect(document.querySelector('.sticky-top h1')!.textContent).toMatch(/^(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day$/);
+    expect(document.querySelector('.todate')!.textContent).toMatch(/^\d{1,2}\. [A-Z][a-z]{2}$/);
     expect(screen.getByRole('button', { name: 'Add to-do' })).toBeTruthy();
     expect(document.querySelectorAll('.todorow')).toHaveLength(0);
     expect(document.body.textContent).not.toMatch(/completed/i);
