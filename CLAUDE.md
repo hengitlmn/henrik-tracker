@@ -122,7 +122,7 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   - Settings ist kein Tab mehr: Lange auf die Leiste drücken (350 ms). Die Leiste gibt kurz nach (`squish`) und spuckt
     wie ein Wassertropfen ein kleines Glas-Menü "Settings" nach oben aus (Dehnen/Stauchen, ohne Zusatzblase,
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings
-    als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp auf den abgedunkelten Hintergrund).
+    als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp daneben). Blätter und Fenster dunkeln die Seite dahinter nicht ab, sie liegen nur darüber.
     Langes Drücken wählt keinen Tab; Ziehen über die Leiste bricht es ab.
   - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers). Doppeltipp auf das To-do-Icon: Glas-Menü mit To-dos / Lists / Upcoming (wie bei Money).
     To-dos: fester Kopf mit Wochentag (`Saturday`) groß und dem Datum (`3. Oct`) klein daneben; Tipp darauf öffnet die Tagesauswahl (Monatsraster,

@@ -419,7 +419,7 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .tabmenu button:active { background: rgba(255, 255, 255, .12); }
 
 /* Settings-Blatt: fährt von unten hoch, X schließt */
-.sheet-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(70, 70, 74, .38); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fadeIn .28s ease both; }
+.sheet-backdrop { position: fixed; inset: 0; z-index: 20; background: transparent; /* keine Abdunklung: nur Fläche zum Schließen per Tipp daneben */ animation: fadeIn .28s ease both; }
 .sheet-backdrop.closing { animation: fadeOut .28s ease both; }
 .sheet {
   position: fixed; z-index: 21; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top, 0px) + 12px);
@@ -479,7 +479,6 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 
 /* To-do-Fenster und Tagesauswahl */
 /* kleines Fenster: schwebt mittig über der Seite, Hintergrund scheint durch (kein Hochfahren von unten) */
-.sheet-backdrop.compact { background: rgba(70, 70, 74, .28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet.compact {
   top: calc(env(safe-area-inset-top, 0px) + 9vh); bottom: auto; left: 16px; right: 16px; max-width: 440px;
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 9vh - 24px);
