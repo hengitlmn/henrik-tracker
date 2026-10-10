@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
-import type { Habit, Money, Todo, TodoList } from './types';
-import { loadHabits, loadMoney, loadTodoLists, loadTodos, saveHabits, saveMoney, saveTodoLists, saveTodos } from './lib/storage';
+import type { Habit, Money, Note, Todo, TodoList } from './types';
+import { loadHabits, loadMoney, loadNotes, loadTodoLists, loadTodos, saveHabits, saveMoney, saveNotes, saveTodoLists, saveTodos } from './lib/storage';
 import { keyOf, parseKey } from './lib/dates';
 
 /** Liste aus localStorage. Gespeichert wird nur bei Änderungen (nie beim Start). */
@@ -32,6 +32,11 @@ export function useTodos() {
 export function useTodoLists() {
   const { items, update } = useStore<TodoList>(loadTodoLists, saveTodoLists);
   return { todoLists: items, update };
+}
+
+export function useNotes() {
+  const { items, update } = useStore<Note>(loadNotes, saveNotes);
+  return { notes: items, update };
 }
 
 export function useMoney() {

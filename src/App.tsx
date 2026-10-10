@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { MoneySection, Tab, TodoSection } from './types';
-import { useHabits, useMoney, useToday, useTodoLists, useTodos, useWeekNav } from './hooks';
+import { useHabits, useMoney, useNotes, useToday, useTodoLists, useTodos, useWeekNav } from './hooks';
 import { CalendarView } from './components/CalendarView';
 import { SettingsSheet } from './components/SettingsSheet';
 import { SettingsView } from './components/SettingsView';
 import { MoneyView } from './components/MoneyView';
 import { HomeView } from './components/HomeView';
+import { NotesView } from './components/NotesView';
 import { TodoView } from './components/TodoView';
 import { TAB_ORDER, TabBar } from './components/TabBar';
 
@@ -14,6 +15,7 @@ export default function App() {
   const { habits, update } = useHabits();
   const { todos, update: updateTodos } = useTodos();
   const { todoLists, update: updateTodoLists } = useTodoLists();
+  const { notes, update: updateNotes } = useNotes();
   const { money, update: updateMoney } = useMoney();
   const today = useToday();
   const week = useWeekNav();
@@ -69,10 +71,10 @@ export default function App() {
           style={{ '--dx': anim.dx + 'px' } as CSSProperties}
           data-view={tab}
         >
-          {/* notes: bewusst noch leer, Platz für spätere Features */}
           {tab === 'money' && <MoneyView money={money} update={updateMoney} today={today} section={moneySection} sectionAnim={sectionAnim} />}
+          {tab === 'notes' && <NotesView notes={notes} today={today} update={updateNotes} />}
           {tab === 'todo' && <TodoView todos={todos} lists={todoLists} today={today} update={updateTodos} updateLists={updateTodoLists} section={todoSection} />}
-          {tab === 'home' && <HomeView habits={habits} todos={todos} money={money} today={today} onOpen={selectTab} />}
+          {tab === 'home' && <HomeView habits={habits} todos={todos} money={money} notes={notes} today={today} onOpen={selectTab} />}
           {tab === 'habits' && (
             <CalendarView
               habits={habits}
@@ -89,7 +91,7 @@ export default function App() {
       <TabBar current={tab} onSelect={selectTab} onOpenSettings={() => setSettingsOpen(true)} moneySection={moneySection} onMoneySection={selectMoneySection} todoSection={todoSection} onTodoSection={selectTodoSection} />
       {settingsOpen && (
         <SettingsSheet onClose={() => setSettingsOpen(false)}>
-          <SettingsView habits={habits} update={update} todos={todos} updateTodos={updateTodos} todoLists={todoLists} updateTodoLists={updateTodoLists} money={money} updateMoney={updateMoney} />
+          <SettingsView habits={habits} update={update} todos={todos} updateTodos={updateTodos} todoLists={todoLists} updateTodoLists={updateTodoLists} notes={notes} updateNotes={updateNotes} money={money} updateMoney={updateMoney} />
         </SettingsSheet>
       )}
     </>

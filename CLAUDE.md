@@ -56,13 +56,15 @@ To-dos: eigener Schlüssel `todos-v1`, Array von `{ id, title, completedAt?: ISO
 `date` = geplanter Tag, `created` = Erstellungstag (bleibt beim Verschieben). Offene To-dos mit früherem `date` erscheinen automatisch heute (Übernahme in `src/lib/todos.ts`, keine Datenänderung). Ältere Daten ohne `date`: offen = heute, erledigt = Tag des Abhakens.
 To-do-Listen: eigener Schlüssel `todo-lists-v1`, Array von `{ id, name }`. Ohne `listId` gehört ein To-do zu keiner Liste (es gibt keinen Inbox). Liste löschen entfernt nur die Zuordnung, die To-dos bleiben auf ihrem Tag.
 
+Notizen: eigener Schlüssel `notes-v1`, Array von `{ id, text, updated: ISO-Zeitpunkt }` (erste Zeile des Textes ist der Titel).
+
 Money: eigener Schlüssel `money-v1`, `{ groups: [{id,name}], accounts: [{id,groupId,name,start}], entries: [{id,type:"income"|"expense"|"transfer",date:"YYYY-MM-DD",accountId,toAccountId?,category?,amount,note?}], categories: {income:[],expense:[]}, budgets: [{category,limit}] }`.
 `budgets` (Monatslimit je Ausgaben-Kategorie, Cent, eins pro Kategorie) ist neu und optional: fehlt es, gilt eine leere Liste.
 Alle Beträge in Cent (ganze Zahlen, `amount` immer positiv). Kontostand = `start` + Einträge (Überweisung: Quelle minus, Ziel plus).
 Anzeige deutsch (`€ 1.057,60`), Eingabe `12,5` oder `12.50`. Ungültige Teile fallen beim Laden/Import weg (`parseMoney`).
 
 Sicherung (Export): `{ app: "habits", version: 1, exported: ISO-Datum, habits: [...], todos: [...], money: {...} }`.
-`money` und `todoLists` sind wie `todos` optional beim Import (fehlt es, bleibt Money unverändert). `todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
+`money`, `todoLists` und `notes` sind wie `todos` optional beim Import (fehlt es, bleibt Money unverändert). `todos` ist optional beim Import: fehlt es (ältere Datei), bleiben die aktuellen To-dos unverändert.
 Der Import akzeptiert zusätzlich das ältere reine Array-Format und verwirft ungültige Datumsschlüssel.
 Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" bestätigen).
 
@@ -90,9 +92,11 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   kurz ein (leichter Schub von der Seite):
   - von links nach rechts: To-do (Haken im Kreis), Money (Geldschein), Home (Mitte, beim Start aktiv,
     Icon ist ein H im Stil des App-Logos), Habits (zwei Kreispfeile = Wiederholung; zeigt die frühere Kalenderansicht mit Wochenzeile und Gewohnheits-Karten), Notes (Notizblatt)
-  - Notes ist bewusst noch leer (für spätere Features)
+  - Notes (minimalistisch wie Apple Notes): Kopf "Notes" mit Suche (alle Wörter müssen passen), eine Glas-Karte mit Zeilen (Titel = erste Zeile fett, darunter Datum bzw. Uhrzeit und zweite Zeile als Vorschau),
+    zuletzt geändert oben. Plus-Button (Glas, wie bei Money) legt eine Notiz an und öffnet den Editor: ein einziges Textfeld, speichert bei jeder Eingabe,
+    oben "‹ Notes" und "Delete" (zweiter Tipp "Sure?"). Eine leer gelassene Notiz verschwindet beim Zurückgehen. Noch nicht gebaut: Ordner, Anhänge, Formatierung, Anheften, Sortieren.
   - Home: Übersicht als Widgets im Stil der iOS-Homescreen-Widgets (abgerundete Kästen `--bar`, zwei Spalten, einzelne über die ganze Breite). Kopf: Wochentag groß, Datum klein.
-    Networth | Spent (Ausgaben der letzten 30 Tage, darunter Einnahmen) · To-dos today (ganze Breite, bis 4 offene Titel, "+N more") · Habits today (Ring, x/y) | Habits this week (Ring, Prozent Montag bis heute) · Last note (ganze Breite, solange es keine Notizen gibt: "No notes yet."). Tipp auf ein Widget öffnet den jeweiligen Tab.
+    Networth | Spent (Ausgaben der letzten 30 Tage, darunter Einnahmen) · To-dos today (ganze Breite, bis 4 offene Titel, "+N more") · Habits today (Ring, x/y) | Habits this week (Ring, Prozent Montag bis heute) · Last note (ganze Breite: zuletzt geänderte Notiz mit Titel und Vorschau, sonst "No notes yet."). Tipp auf ein Widget öffnet den jeweiligen Tab.
   - Money-Tab (Vorbild: Money-Manager-App aus den Screenrecordings des Nutzers): fester Kopf ohne Überschrift mit
     drei Spalten mittig: "Networth" (Gesamtstand aller Konten, weißer Titel, Betrag blau, bei Minus rot), "+ Month"
     (Einnahmen, blau) und "- Month" (Ausgaben, rot). Ein Tipp auf irgendeine der drei Zellen schaltet den Zeitraum von
@@ -157,6 +161,5 @@ Umzug von Netlify: einmal Daten sichern, neue Adresse hinzufügen, wiederherstel
 
 ## Offene Punkte / Ideen
 
-- Notes-Tab ist leer, Inhalt noch offen (das Home-Widget "Last note" zeigt dann die zuletzt geöffnete Notiz).
 - Echtes Gerätetesten steht aus: Zoom-Sperre, Schrift (Archivo Black), Teilen-Menü bei "Als Datei sichern",
   Offline-Start. Bei Problemen zuerst dort prüfen.

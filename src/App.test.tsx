@@ -42,7 +42,7 @@ function addHabit(name: string) {
 }
 
 describe('Start und Tabs', () => {
-  it('zeigt fünf Tabs in fester Reihenfolge, Home mittig und aktiv, Habits zeigt den Kalender, Notes ist noch leer', () => {
+  it('zeigt fünf Tabs in fester Reihenfolge, Home mittig und aktiv, Habits zeigt den Kalender', () => {
     render(<App />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((t) => t.getAttribute('aria-label'))).toEqual(['To-do', 'Money', 'Home', 'Habits', 'Notes']);
@@ -50,7 +50,7 @@ describe('Start und Tabs', () => {
     expect(document.querySelector('[data-view="home"] .widgets')).toBeTruthy();
     fireEvent.click(tab('Notes'));
     expect(tab('Notes').getAttribute('aria-selected')).toBe('true');
-    expect(document.querySelector('[data-view="notes"]')!.children).toHaveLength(0);
+    expect(screen.getByText(/No notes yet/)).toBeTruthy();
     fireEvent.click(tab('Habits'));
     expect(screen.getByLabelText('Back to current week')).toBeTruthy();
   });
@@ -536,6 +536,60 @@ describe('To-do-Tab', () => {
     await vi.waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/Replace 0 habits with 1\?/));
     fireEvent.click(screen.getByText('Confirm'));
     expect(JSON.parse(localStorage.getItem('todos-v1')!)).toEqual([{ id: 'a', title: 'Mine' }]);
+  });
+});
+
+describe('Notes', () => {
+  const openNotes = () => fireEvent.click(tab('Notes'));
+  const stored = () => JSON.parse(localStorage.getItem('notes-v1')!);
+
+  it('Plus legt eine Notiz an, Tippen speichert sofort, die Liste zeigt Titel und Vorschau, zuletzt geändert oben', () => {
+    render(<App />);
+    openNotes();
+    expect(screen.queryByLabelText('Search notes')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'New note' }));
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Groceries\nMilk and eggs' } });
+    expect(stored()[0].text).toBe('Groceries\nMilk and eggs');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to notes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New note' }));
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Ideas' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Back to notes' }));
+    expect([...document.querySelectorAll('.noterow b')].map((b) => b.textContent)).toEqual(['Ideas', 'Groceries']);
+    expect(document.querySelectorAll('.noterow span')[1].textContent).toMatch(/Milk and eggs$/);
+    expect(document.querySelectorAll('.noterow span')[0].textContent).toMatch(/No additional text$/);
+
+    fireEvent.change(screen.getByLabelText('Search notes'), { target: { value: 'eggs' } });
+    expect([...document.querySelectorAll('.noterow b')].map((b) => b.textContent)).toEqual(['Groceries']);
+    fireEvent.change(screen.getByLabelText('Search notes'), { target: { value: 'zzz' } });
+    expect(screen.getByText('No matching notes.')).toBeTruthy();
+  });
+
+  it('leer gelassene Notiz verschwindet, Löschen fragt nach', () => {
+    localStorage.setItem('notes-v1', JSON.stringify([{ id: 'a', text: 'Keep me', updated: new Date().toISOString() }]));
+    render(<App />);
+    openNotes();
+    fireEvent.click(screen.getByRole('button', { name: 'New note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to notes' }));
+    expect(stored()).toHaveLength(1);
+    fireEvent.click(screen.getByText('Keep me'));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(stored()).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Sure?' }));
+    expect(stored()).toHaveLength(0);
+    expect(screen.getByText(/No notes yet/)).toBeTruthy();
+  });
+
+  it('Home zeigt die zuletzt geänderte Notiz', () => {
+    localStorage.setItem('notes-v1', JSON.stringify([
+      { id: 'a', text: 'Old note', updated: '2026-01-01T10:00:00.000Z' },
+      { id: 'b', text: 'Fresh note\nwith details', updated: '2026-10-09T10:00:00.000Z' },
+    ]));
+    render(<App />);
+    const w = screen.getByRole('button', { name: 'Last note' });
+    expect(w.textContent).toContain('Fresh note');
+    expect(w.textContent).toContain('with details');
+    fireEvent.click(w);
+    expect(tab('Notes').getAttribute('aria-selected')).toBe('true');
   });
 });
 

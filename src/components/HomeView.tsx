@@ -1,15 +1,17 @@
 import type { ReactNode } from 'react';
-import type { Habit, Money, Tab, Todo } from '../types';
+import type { Habit, Money, Note, Tab, Todo } from '../types';
 import { MONTHS_SHORT, WEEKDAYS_EN, keyOf } from '../lib/dates';
 import { formatMoney, totals } from '../lib/money';
 import { flowSince } from '../lib/stats';
 import { habitSummary, percent } from '../lib/home';
 import { todosForDay } from '../lib/todos';
+import { notePreview, noteTitle, sortNotes } from '../lib/notes';
 
 interface Props {
   habits: Habit[];
   todos: Todo[];
   money: Money;
+  notes: Note[];
   today: Date;
   onOpen: (tab: Tab) => void;
 }
@@ -46,12 +48,13 @@ function Widget({ label, tab, onOpen, wide, children }: { label: string; tab: Ta
 }
 
 /** Home: Übersicht über alle Bereiche als Widgets (zwei Spalten, einzelne Kästen über die ganze Breite). */
-export function HomeView({ habits, todos, money, today, onOpen }: Props) {
+export function HomeView({ habits, todos, money, notes, today, onOpen }: Props) {
   const todayKey = keyOf(today);
   const networth = totals(money).total;
   const { expense, income } = flowSince(money, 'month', today);
   const open = todosForDay(todos, todayKey, todayKey).open;
   const hs = habitSummary(habits, today);
+  const lastNote = sortNotes(notes.filter((n) => n.text.trim()))[0];
   const weekPct = percent(hs.weekDone, hs.weekPossible);
 
   return (
@@ -98,7 +101,14 @@ export function HomeView({ habits, todos, money, today, onOpen }: Props) {
         </Widget>
 
         <Widget label="Last note" tab="notes" onOpen={onOpen} wide>
-          <span className="w-empty">No notes yet.</span>
+          {lastNote ? (
+            <>
+              <span className="w-notetitle">{noteTitle(lastNote.text)}</span>
+              <span className="w-sub">{notePreview(lastNote.text)}</span>
+            </>
+          ) : (
+            <span className="w-empty">No notes yet.</span>
+          )}
         </Widget>
       </div>
     </div>

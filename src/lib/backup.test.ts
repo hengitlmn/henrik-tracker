@@ -92,3 +92,12 @@ describe('To-do-Listen und Zusatzfelder', () => {
     expect(r.todoLists).toEqual([{ id: 'a', name: 'Ok' }]);
   });
 });
+
+describe('Notizen in der Sicherung', () => {
+  it('bleiben erhalten; ältere Dateien ohne Notizen ergeben null', () => {
+    const notes = [{ id: 'n', text: 'Hi\nthere', updated: '2026-10-09T10:00:00.000Z' }];
+    expect(parseBackup(exportText([], [], undefined, undefined, notes))!.notes).toEqual(notes);
+    expect(parseBackup(JSON.stringify({ habits: [] }))!.notes).toBeNull();
+    expect(parseBackup(JSON.stringify({ habits: [], notes: [{ text: 5 }, { id: 'x', text: 'ok', updated: 'bad' }] }))!.notes).toMatchObject([{ id: 'x', text: 'ok' }]);
+  });
+});

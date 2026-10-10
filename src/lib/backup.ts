@@ -1,16 +1,16 @@
-import type { Habit, Money, Todo, TodoList } from '../types';
+import type { Habit, Money, Note, Todo, TodoList } from '../types';
 import { keyOf } from './dates';
 import { newId } from './id';
 import { validColor } from './colors';
 import { parseMoney } from './money';
-import { copyTodoExtras, parseTodoLists } from './storage';
+import { copyTodoExtras, parseNotes, parseTodoLists } from './storage';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function exportText(habits: Habit[], todos: Todo[] = [], money?: Money, todoLists?: TodoList[]): string {
+export function exportText(habits: Habit[], todos: Todo[] = [], money?: Money, todoLists?: TodoList[], notes?: Note[]): string {
   return JSON.stringify({
     app: 'habits', version: 1, exported: new Date().toISOString(), habits, todos,
-    ...(todoLists ? { todoLists } : {}), ...(money ? { money } : {}),
+    ...(todoLists ? { todoLists } : {}), ...(notes ? { notes } : {}), ...(money ? { money } : {}),
   });
 }
 
@@ -22,6 +22,8 @@ export interface ParsedBackup {
   money: Money | null;
   /** null: die Sicherung enthält keine Listen (ältere Datei), dann bleiben die aktuellen erhalten */
   todoLists: TodoList[] | null;
+  /** null: die Sicherung enthält keine Notizen (ältere Datei), dann bleiben die aktuellen erhalten */
+  notes: Note[] | null;
 }
 
 function parseTodos(raw: unknown): Todo[] | null {
@@ -92,5 +94,7 @@ export function parseBackup(text: string): ParsedBackup | null {
   }
   const rawLists = !Array.isArray(data) && data ? (data as { todoLists?: unknown }).todoLists : undefined;
   const todoLists = Array.isArray(rawLists) ? parseTodoLists(rawLists) : null;
-  return { habits: out, todos, money, todoLists };
+  const rawNotes = !Array.isArray(data) && data ? (data as { notes?: unknown }).notes : undefined;
+  const notes = Array.isArray(rawNotes) ? parseNotes(rawNotes) : null;
+  return { habits: out, todos, money, todoLists, notes };
 }

@@ -22,6 +22,14 @@ export interface Todo {
   listId?: string;
 }
 
+export interface Note {
+  id: string;
+  /** Ganzer Text; die erste Zeile ist der Titel */
+  text: string;
+  /** ISO-Zeitpunkt der letzten Änderung */
+  updated: string;
+}
+
 export interface TodoList {
   id: string;
   name: string;

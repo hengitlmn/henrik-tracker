@@ -1,4 +1,4 @@
-import type { Habit, Money, Todo, TodoList } from '../types';
+import type { Habit, Money, Note, Todo, TodoList } from '../types';
 import { newId } from './id';
 import { validColor } from './colors';
 import { emptyMoney, parseMoney } from './money';
@@ -107,6 +107,42 @@ export function loadTodoLists(): TodoList[] {
 export function saveTodoLists(lists: TodoList[]): void {
   try {
     localStorage.setItem(TODO_LISTS_KEY, JSON.stringify(lists));
+  } catch {
+    /* Speicher voll oder gesperrt: still ignorieren */
+  }
+}
+
+/** Eigener Schlüssel für Notizen (neues Feature, daher keine Migration nötig). */
+export const NOTES_KEY = 'notes-v1';
+
+/** Gültige Notizen aus unbekannten Daten; ungültige und doppelte Einträge fallen weg */
+export function parseNotes(data: unknown): Note[] {
+  if (!Array.isArray(data)) return [];
+  const out: Note[] = [];
+  const seen = new Set<string>();
+  for (const item of data) {
+    if (!item || typeof item.text !== 'string') continue;
+    const id = typeof item.id === 'string' && item.id ? item.id : newId();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const updated = typeof item.updated === 'string' && !Number.isNaN(Date.parse(item.updated)) ? item.updated : new Date(0).toISOString();
+    out.push({ id, text: item.text.slice(0, 50000), updated });
+  }
+  return out;
+}
+
+export function loadNotes(): Note[] {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY);
+    return parseNotes(raw ? JSON.parse(raw) : []);
+  } catch {
+    return [];
+  }
+}
+
+export function saveNotes(notes: Note[]): void {
+  try {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
   } catch {
     /* Speicher voll oder gesperrt: still ignorieren */
   }

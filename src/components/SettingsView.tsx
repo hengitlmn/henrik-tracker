@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import type { Habit, Money, Todo, TodoList } from '../types';
+import type { Habit, Money, Note, Todo, TodoList } from '../types';
 import { DataSettings } from './DataSettings';
 import { HabitsSettings } from './HabitsSettings';
 import { MoneySettings } from './MoneySettings';
@@ -12,6 +12,8 @@ interface Props {
   updateTodos: (fn: (current: Todo[]) => Todo[]) => void;
   todoLists: TodoList[];
   updateTodoLists: (fn: (current: TodoList[]) => TodoList[]) => void;
+  notes: Note[];
+  updateNotes: (fn: (current: Note[]) => Note[]) => void;
   money: Money;
   updateMoney: (fn: (current: Money) => Money) => void;
 }
@@ -39,7 +41,7 @@ function Row({ label, color, icon, onClick }: { label: string; color: string; ic
   );
 }
 
-export function SettingsView({ habits, update, todos, updateTodos, todoLists, updateTodoLists, money, updateMoney }: Props) {
+export function SettingsView({ habits, update, todos, updateTodos, todoLists, updateTodoLists, notes, updateNotes, money, updateMoney }: Props) {
   const [page, setPage] = useState<Page>('root');
   const [dx, setDx] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
@@ -102,7 +104,7 @@ export function SettingsView({ habits, update, todos, updateTodos, todoLists, up
           </div>
           {page === 'habits' && <HabitsSettings habits={habits} update={update} />}
           {page === 'money' && <MoneySettings money={money} update={updateMoney} />}
-          {page === 'data' && <DataSettings habits={habits} update={update} todos={todos} updateTodos={updateTodos} todoLists={todoLists} updateTodoLists={updateTodoLists} money={money} updateMoney={updateMoney} />}
+          {page === 'data' && <DataSettings habits={habits} update={update} todos={todos} updateTodos={updateTodos} todoLists={todoLists} updateTodoLists={updateTodoLists} notes={notes} updateNotes={updateNotes} money={money} updateMoney={updateMoney} />}
         </>
       )}
     </div>
