@@ -37,6 +37,10 @@ export function MoneyView({ money, update, today, section, sectionAnim }: Props)
   const [dx, setDx] = useState(0);
   const [period, setPeriod] = useState<Period>('month');
   const [month, setMonth] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }));
+  /** Formular über das Plus von Liste, Stats und Calendar (Konto: das erste, im Formular änderbar) */
+  const [quick, setQuick] = useState(false);
+  /** Eintrag, der im Calendar gerade geändert wird (dann ist das Plus ausgeblendet) */
+  const [calEditId, setCalEditId] = useState<string | null>(null);
 
   const go = (next: View, dir: 1 | -1) => {
     setDx(dir * 28);
@@ -44,46 +48,88 @@ export function MoneyView({ money, update, today, section, sectionAnim }: Props)
     window.scrollTo(0, 0);
   };
 
+  const firstAccount = money.accounts[0]?.id;
+  const formOpen = quick || (section === 'accounts' && view.kind === 'entry') || (section === 'calendar' && calEditId !== null);
+
+  // Plus: immer da, solange es ein Konto gibt und kein Formular offen ist. Über document.body, damit "fixed"
+  // nicht an der Einblend-Animation der Ansicht hängt.
+  const fab = firstAccount && !formOpen
+    ? createPortal(
+        <button
+          type="button"
+          className="fab"
+          aria-label="Add entry"
+          onClick={() => {
+            if (section === 'accounts' && view.kind === 'account') go({ kind: 'entry', accountId: view.id }, 1);
+            else setQuick(true);
+          }}
+        >
+          <svg {...SVG} width="26" height="26" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+        </button>,
+        document.body,
+      )
+    : null;
+
+  if (quick && firstAccount) {
+    return (
+      <div key="quick" className="view-in" style={{ '--dx': '28px' } as CSSProperties}>
+        <EntryForm
+          money={money}
+          update={update}
+          today={today}
+          accountId={firstAccount}
+          onSaved={(date) => { const d = parseKey(date); setMonth({ y: d.getFullYear(), m: d.getMonth() }); }}
+          onBack={() => setQuick(false)}
+        />
+      </div>
+    );
+  }
+
   if (section !== 'accounts') {
     return (
-      <div key={section} className="view-in" style={{ '--dx': '28px' } as CSSProperties} data-money={section}>
-        {section === 'stats' ? (
-          <MoneyStats money={money} update={update} month={month} setMonth={setMonth} />
-        ) : (
-          <MoneyCalendar money={money} update={update} today={today} />
-        )}
-      </div>
+      <>
+        <div key={section} className="view-in" style={{ '--dx': '28px' } as CSSProperties} data-money={section}>
+          {section === 'stats' ? (
+            <MoneyStats money={money} update={update} month={month} setMonth={setMonth} />
+          ) : (
+            <MoneyCalendar money={money} update={update} today={today} editId={calEditId} setEditId={setCalEditId} />
+          )}
+        </div>
+        {fab}
+      </>
     );
   }
 
   const key = view.kind + ('id' in view ? view.id : '') + ('accountId' in view ? view.accountId + (view.editId ?? '') : '');
 
   return (
-    <div key={key} className={dx || sectionAnim ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
-      {view.kind === 'list' && <AccountList money={money} today={today} period={period} onPeriod={setPeriod} onOpen={(id) => go({ kind: 'account', id }, 1)} />}
-      {view.kind === 'account' && (
-        <AccountPage
-          money={money}
-          accountId={view.id}
-          month={month}
-          setMonth={setMonth}
-          onBack={() => go({ kind: 'list' }, -1)}
-          onAdd={() => go({ kind: 'entry', accountId: view.id }, 1)}
-          onEdit={(e) => go({ kind: 'entry', accountId: view.id, editId: e.id }, 1)}
-        />
-      )}
-      {view.kind === 'entry' && (
-        <EntryForm
-          money={money}
-          update={update}
-          today={today}
-          accountId={view.accountId}
-          editing={money.entries.find((e) => e.id === view.editId)}
-          onSaved={(date) => { const d = parseKey(date); setMonth({ y: d.getFullYear(), m: d.getMonth() }); }}
-          onBack={() => go({ kind: 'account', id: view.accountId }, -1)}
-        />
-      )}
-    </div>
+    <>
+      <div key={key} className={dx || sectionAnim ? 'view-in' : undefined} style={{ '--dx': dx + 'px' } as CSSProperties}>
+        {view.kind === 'list' && <AccountList money={money} today={today} period={period} onPeriod={setPeriod} onOpen={(id) => go({ kind: 'account', id }, 1)} />}
+        {view.kind === 'account' && (
+          <AccountPage
+            money={money}
+            accountId={view.id}
+            month={month}
+            setMonth={setMonth}
+            onBack={() => go({ kind: 'list' }, -1)}
+            onEdit={(e) => go({ kind: 'entry', accountId: view.id, editId: e.id }, 1)}
+          />
+        )}
+        {view.kind === 'entry' && (
+          <EntryForm
+            money={money}
+            update={update}
+            today={today}
+            accountId={view.accountId}
+            editing={money.entries.find((e) => e.id === view.editId)}
+            onSaved={(date) => { const d = parseKey(date); setMonth({ y: d.getFullYear(), m: d.getMonth() }); }}
+            onBack={() => go({ kind: 'account', id: view.accountId }, -1)}
+          />
+        )}
+      </div>
+      {fab}
+    </>
   );
 }
 
@@ -152,11 +198,10 @@ interface AccountPageProps {
   month: Month;
   setMonth: (m: Month) => void;
   onBack: () => void;
-  onAdd: () => void;
   onEdit: (e: MoneyEntry) => void;
 }
 
-function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit }: AccountPageProps) {
+function AccountPage({ money, accountId, month, setMonth, onBack, onEdit }: AccountPageProps) {
   const { shift, swipeProps } = useMonthPager(month, setMonth);
   const account = money.accounts.find((a) => a.id === accountId);
   const prefix = monthPrefix(month.y, month.m);
@@ -195,14 +240,6 @@ function AccountPage({ money, accountId, month, setMonth, onBack, onAdd, onEdit 
           {inMonth.length === 0 && <p className="hint">No entries this month.</p>}
         </div>
       </div>
-
-      {/* über document.body, damit "fixed" nicht an der Einblend-Animation der Ansicht hängt */}
-      {createPortal(
-        <button type="button" className="fab" aria-label="Add entry" onClick={onAdd}>
-          <svg {...SVG} width="26" height="26" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
-        </button>,
-        document.body,
-      )}
     </>
   );
 }

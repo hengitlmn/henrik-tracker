@@ -101,7 +101,7 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     (Assets/Liabilities und Saved gibt es nicht mehr),
     darunter Abschnitte (Gruppen) als Kopfzeile mit Summe (blau, negativ rot) und
     Konten als Zeilen in einer Karte. Tipp auf ein Konto: Kontoseite mit "‹ Accounts", Monatswahl, Deposit /
-    Withdrawal / Total / Balance und den Einträgen nach Tagen; Plus-Button unten rechts über der Leiste. Plus öffnet
+    Withdrawal / Total / Balance und den Einträgen nach Tagen; Plus-Button unten rechts über der Leiste (Liquid-Glass wie die Leiste; er steht in jedem Money-Bereich, also auch Accounts, Stats und Calendar, solange es ein Konto gibt und kein Formular offen ist; außerhalb der Kontoseite ist das erste Konto vorgewählt, im Formular änderbar). Plus öffnet
     das Formular: Income / Expense / Transfer, Date, Account (Transfer: From/To), Category (Auswahl-Raster mit "Add"),
     Amount, Note, "Save" und "Continue" (speichert und bleibt offen). Tipp auf einen Eintrag = ändern/löschen.
     Monatswechsel auch per Wischen (wie die Woche im Kalender). Plus-Button hängt per Portal an `document.body`

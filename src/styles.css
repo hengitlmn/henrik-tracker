@@ -271,10 +271,19 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .swipearea { touch-action: pan-y; min-height: calc(100vh - 220px); }
 .fab {
   position: fixed; z-index: 8; width: 58px; height: 58px; border-radius: 50%;
-  right: max(24px, calc(50% - 216px));
+  right: max(16px, calc(50% - 224px));
   bottom: calc(max(8px, env(safe-area-inset-bottom, 0px) - 14px) + 82px);
-  background: var(--accent); color: #fff; display: grid; place-items: center;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .25);
+  display: grid; place-items: center; color: var(--ink);
+  /* gleiches Liquid-Glass wie die Tab-Leiste */
+  background: rgba(46, 46, 50, .55);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+.fab::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, 0) 45%); }
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .fab { background: #232326; }
 }
 .fab:active { transform: scale(.94); }
 .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 14px; }

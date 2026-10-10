@@ -10,6 +10,9 @@ interface Props {
   money: Money;
   update: (fn: (current: Money) => Money) => void;
   today: Date;
+  /** Eintrag, der gerade geändert wird (vom Elternteil gehalten, damit dort das Plus ausgeblendet werden kann) */
+  editId: string | null;
+  setEditId: (id: string | null) => void;
 }
 
 const SVG = {
@@ -24,10 +27,9 @@ function dayLabel(key: string): string {
 }
 
 /** Alle Einnahmen und Ausgaben untereinander, neueste zuerst, mit Suche nach Begriffen und Tagen */
-export function MoneyCalendar({ money, update, today }: Props) {
+export function MoneyCalendar({ money, update, today, editId, setEditId }: Props) {
   const [query, setQuery] = useState('');
   const [day, setDay] = useState('');
-  const [editId, setEditId] = useState<string | null>(null);
 
   const editing = editId ? money.entries.find((e) => e.id === editId) : undefined;
   if (editing) {

@@ -918,6 +918,25 @@ describe('Money', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name }));
   };
 
+  it('Das Plus ist in jedem Money-Bereich da und legt Einträge an (Accounts, Stats, Calendar)', () => {
+    render(<App />);
+    seedEntries(); // endet auf der Kontenliste
+    expect(document.querySelector('.fab')).toBeTruthy();
+    for (const section of ['Stats', 'Calendar'] as const) {
+      openMoneySection(section);
+      expect(document.querySelectorAll('.fab')).toHaveLength(1);
+    }
+    // im Calendar: Plus öffnet das Formular (Plus dann weg), Speichern bringt den neuen Eintrag in die Liste
+    fireEvent.click(screen.getByLabelText('Add entry'));
+    expect(document.querySelector('.fab')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Expense' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '9,90' } });
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Coffee' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(document.querySelector('.fab')).toBeTruthy();
+    expect([...document.querySelectorAll('[data-money="calendar"] .entry b')].map((b) => b.textContent)).toContain('Coffee');
+  });
+
   it('Calendar: alle Einträge untereinander, neueste zuerst, Suche nach Begriff und Tag', () => {
     render(<App />);
     seedEntries();
