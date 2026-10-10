@@ -116,7 +116,7 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
     bewusst keine Vibration, iOS kennt `navigator.vibrate` nicht). Tipp darauf öffnet die Settings
     als Blatt, das von unten hochfährt, oben rechts schließt ein X (auch Tipp auf den abgedunkelten Hintergrund).
     Langes Drücken wählt keinen Tab; Ziehen über die Leiste bricht es ab.
-  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers): fester Kopf "Today" plus Datum (`Sat 3. Oct`),
+  - To-do-Tab (Vorbild: To-do-App aus dem Screen-Recording des Nutzers): fester Kopf mit Wochentag (`Saturday`) groß und dem Datum (`3. Oct`) klein daneben,
     Aufgaben als einfache Zeilen mit Kästchen und fettem Titel, darunter ein "+" (Tipp öffnet eine Eingabezeile, Enter
     fügt hinzu und lässt sie offen). Abhaken verschiebt die Aufgabe unter "Hide completed" (auf-/zuklappbar) mit
     Zeitstempel (`3. Oct 14:55`), Rückgängig setzt sie an die ursprüngliche Stelle. Tipp auf den Titel = umbenennen,

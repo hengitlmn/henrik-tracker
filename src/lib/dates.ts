@@ -57,7 +57,6 @@ export function streak(h: Habit, today: Date): number {
   return n;
 }
 
-/** "Sat 3. Oct" */
 /** "3. Oct 14:55" aus einem ISO-Zeitpunkt */
 export function stamp(iso: string): string {
   const d = new Date(iso);
