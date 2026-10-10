@@ -73,11 +73,8 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
   im Stil von Apple Liquid Glass: dunkel getönt und durchscheinend (`--glass`), `backdrop-filter` (Weichzeichnung), feiner heller Rand,
   Glanzkante oben. Der gemeinsame Glas-Block steht am Ende von `styles.css`; neue Flächen dort eintragen. Schrift auf Akzent-/Statusfarben
   ist dunkel (`--on-accent`), weil der helle Akzent sonst zu wenig Kontrast hat. Farben als CSS-Variablen auf `:root`.
-- Schrift: Hanken Grotesk für den Text. Das Datum oben nutzt `"Arial Black"`, dann `"Archivo Black"`
-  (Google Fonts als Ersatz, weil iOS Arial Black nicht hat), dann Arial. Dafür `font-weight: 900` und
-  `font-synthesis: none`, damit nichts künstlich fett wird.
-- Oben mittig: Wochentag (englisch) über dem Datum im Format `03. October` (englisch), vertikal mittig
-  zwischen Bildschirmrand und Wochenzeile. Kein Fortschrittstext und kein Balken mehr.
+- Schrift: Hanken Grotesk für den gesamten Text (Archivo Black wird nicht mehr gebraucht, das Datum oben ist normale Schrift).
+- Kopf überall gleich (Home, To-do, Habits): Wochentag englisch groß links (`Saturday`), das Datum klein daneben (`10. Oct`). Auf Habits setzt ein Tipp darauf die Woche auf die aktuelle zurück.
 - **Die gesamte App-Oberfläche ist englisch, auch alle künftigen Texte** (Buttons, Hinweise, Fehlermeldungen,
   aria-labels, Dateinamen). Nur die Kommunikation mit dem Nutzer im Chat bleibt deutsch.
 - Wochenanzeige oben: `Week 41` (ISO-Kalenderwoche), darunter pro Tag das Datum (`01`–`31`) über dem Buchstaben

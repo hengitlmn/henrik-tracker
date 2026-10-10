@@ -46,19 +46,10 @@ main { max-width: 480px; margin: 0 auto; padding: 34px 24px calc(96px + env(safe
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; touch-action: manipulation; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 
-/* Kopf: Wochentag und Datum */
-.head { margin-bottom: 19px; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* Kopf: Wochentag groß, Datum klein daneben (wie auf Home und To-do, siehe .todohead) */
+.todohead.head { cursor: pointer; -webkit-tap-highlight-color: transparent; justify-content: flex-start; padding-left: 8px; padding-right: 8px; } /* Wochenbereich ist 8 px breiter als die Seite */
 .head:focus { outline: none; }
-.day { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
 h1 { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin: 0; }
-.date {
-  font-family: "Arial Black", "Archivo Black", Arial, sans-serif;
-  font-weight: 900;                    /* Fallback auf Arial Bold, falls beide Black-Schriften fehlen */
-  font-synthesis: none;                /* kein künstliches Fett auf bereits schwarzen Schriften */
-  font-size: clamp(24px, 8vw, 32px);
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-}
 
 /* Wochenbereich: etwas breiter als die Seite, Pfeile über Montag und Sonntag */
 .weekarea { margin: 0 -8px; touch-action: pan-y; overflow-x: clip; }
@@ -428,13 +419,13 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 .tabmenu button:active { background: rgba(255, 255, 255, .12); }
 
 /* Settings-Blatt: fährt von unten hoch, X schließt */
-.sheet-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .55); animation: fadeIn .28s ease both; }
+.sheet-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(70, 70, 74, .38); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fadeIn .28s ease both; }
 .sheet-backdrop.closing { animation: fadeOut .28s ease both; }
 .sheet {
   position: fixed; z-index: 21; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top, 0px) + 12px);
   max-width: 480px; margin: 0 auto; display: flex; flex-direction: column;
   background: rgba(104, 104, 108, .62); -webkit-backdrop-filter: blur(34px) saturate(180%); backdrop-filter: blur(34px) saturate(180%); border-radius: 28px 28px 0 0; border-top: 1px solid var(--glass-edge);
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, .5);
+  box-shadow: 0 -10px 36px rgba(0, 0, 0, .16);
   animation: sheetUp .38s cubic-bezier(.32,.72,0,1) both;
 }
 .sheet.closing { animation: sheetDown .28s cubic-bezier(.4,0,1,1) both; }
@@ -488,13 +479,13 @@ input[type="text"]:focus { outline: none; border-bottom-color: var(--ink); }
 
 /* To-do-Fenster und Tagesauswahl */
 /* kleines Fenster: schwebt mittig über der Seite, Hintergrund scheint durch (kein Hochfahren von unten) */
-.sheet-backdrop.compact { background: rgba(0, 0, 0, .35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.sheet-backdrop.compact { background: rgba(70, 70, 74, .28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet.compact {
   top: calc(env(safe-area-inset-top, 0px) + 9vh); bottom: auto; left: 16px; right: 16px; max-width: 440px;
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 9vh - 24px);
   border-radius: 26px; border: 1px solid rgba(255, 255, 255, .10);
   background: rgba(96, 96, 100, .58); -webkit-backdrop-filter: blur(34px) saturate(180%); backdrop-filter: blur(34px) saturate(180%);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .18);
   animation: popIn .26s cubic-bezier(.32,.72,0,1) both;
 }
 .sheet.compact.closing { animation: popOut .2s ease both; }

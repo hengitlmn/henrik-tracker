@@ -3,7 +3,7 @@ import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from 'rea
 import type { Habit } from '../types';
 import type { Slide } from '../hooks';
 import {
-  DAY_LETTERS, MONTHS_EN, WEEKDAYS_EN, addDays, isoWeek, keyOf, pad, streak, weekDates,
+  DAY_LETTERS, MONTHS_EN, MONTHS_SHORT, WEEKDAYS_EN, addDays, isoWeek, keyOf, pad, streak, weekDates,
 } from '../lib/dates';
 
 interface Props {
@@ -78,9 +78,9 @@ export function CalendarView({ habits, today, weekOffset, slide, onChangeWeek, o
     >
       {/* Oberer Teil bleibt beim Scrollen stehen, die Karten laufen darunter durch */}
       <div className="sticky-top">
-        <header className="head" role="button" tabIndex={0} aria-label="Back to current week" onClick={onToday} onKeyDown={onHeadKey}>
-          <p className="day">{WEEKDAYS_EN[today.getDay()]}</p>
-          <h1 className="date">{pad(today.getDate())}. {MONTHS_EN[today.getMonth()]}</h1>
+        <header className="todohead head" role="button" tabIndex={0} aria-label="Back to current week" onClick={onToday} onKeyDown={onHeadKey}>
+          <h1>{WEEKDAYS_EN[today.getDay()]}</h1>
+          <span className="todate">{today.getDate() + '. ' + MONTHS_SHORT[today.getMonth()]}</span>
         </header>
 
         <div className="nav" data-slide>
