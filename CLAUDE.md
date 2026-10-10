@@ -68,8 +68,11 @@ Wiederherstellen ersetzt die aktuellen Daten (Datei wählen, dann mit "Confirm" 
 
 ## Design-Entscheidungen
 
-- Minimalistisch und nur dunkel (kein Light-/Dark-Theme): Hintergrund `#121212`, helle Schrift `#F2F2F0`,
-  ein Akzent (`#6F85FF`). Farben als CSS-Variablen auf `:root`.
+- Minimalistisch, ein einziges Theme (kein Light-/Dark-Wechsel): mittelgrauer Hintergrund `#727272` (vom Nutzer vorgegeben), weiße Schrift,
+  heller Akzent `#8EA2FF`, Ausgaben `#FF8E8E`. Alle Flächen im Vordergrund (Karten, Widgets, Tab-Leiste, Menüs, Plus-Button, Blätter, Fenster)
+  im Stil von Apple Liquid Glass: dunkel getönt und durchscheinend (`--glass`), `backdrop-filter` (Weichzeichnung), feiner heller Rand,
+  Glanzkante oben. Der gemeinsame Glas-Block steht am Ende von `styles.css`; neue Flächen dort eintragen. Schrift auf Akzent-/Statusfarben
+  ist dunkel (`--on-accent`), weil der helle Akzent sonst zu wenig Kontrast hat. Farben als CSS-Variablen auf `:root`.
 - Schrift: Hanken Grotesk für den Text. Das Datum oben nutzt `"Arial Black"`, dann `"Archivo Black"`
   (Google Fonts als Ersatz, weil iOS Arial Black nicht hat), dann Arial. Dafür `font-weight: 900` und
   `font-synthesis: none`, damit nichts künstlich fett wird.
